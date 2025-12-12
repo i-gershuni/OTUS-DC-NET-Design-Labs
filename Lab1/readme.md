@@ -43,11 +43,170 @@
 
 Адреса Loopback интерфейсов:
 
-|  Spine |	L1 | L2 |
+|  Spine |	S1 | S2 |
 |-------------|---------------|---------------|
 | loopback | 10.22.36.1/32 | 10.22.36.2/32 |
 
-|  Leaf |	S1 | S2 | S3 |
+|  Leaf |	L1 | L2 | L3 |
 |-------------|---------------|---------------|------------|
 | loopback |	10.22.37.1/32 | 10.22.37.2/32 | 10.22.37.3/32 |
+
+Применяем приведенные настройки IP адресов на интерфейсах коммутаторов. Так же настраиваем hostname, отключаем icmp redirect и создаем базовую конфигурацию ospf для обеспечения связности.
+
+#### Настройки коммутатора S1:
+'''
+hostname S1
+
+interface Ethernet1
+   no switchport
+   ip address 10.22.32.0/31
+   ip ospf network point-to-point
+
+interface Ethernet2
+   no switchport
+   ip address 10.22.32.2/31
+   ip ospf network point-to-point
+
+interface Ethernet3
+   no switchport
+   ip address 10.22.32.4/31
+   ip ospf network point-to-point
+
+interface Loopback1
+   ip address 10.22.36.1/32
+!
+no ip icmp redirect
+!
+router ospf 1
+   router-id 10.22.36.1
+   bfd default
+   passive-interface Loopback1
+   network 10.22.32.0/21 area 0.0.0.1
+end
+'''
+
+#### Настройки коммутатора S2:
+'''
+hostname S2
+
+interface Ethernet1
+   no switchport
+   ip address 10.22.32.64/31
+   ip ospf network point-to-point
+
+interface Ethernet2
+   no switchport
+   ip address 10.22.32.66/31
+   ip ospf network point-to-point
+
+interface Ethernet3
+   no switchport
+   ip address 10.22.32.68/31
+   ip ospf network point-to-point
+
+interface Loopback1
+   ip address 10.22.36.2/32
+
+no ip icmp redirect
+
+router ospf 1
+   router-id 10.22.36.2
+   bfd default
+   passive-interface Loopback1
+   network 10.22.32.0/21 area 0.0.0.1
+end
+'''
+
+#### Настройки коммутатора L1:
+'''
+hostname L1
+
+interface Ethernet1
+   no switchport
+   ip address 10.22.32.1/31
+   ip ospf network point-to-point
+
+interface Ethernet2
+   no switchport
+   ip address 10.22.32.65/31
+   ip ospf network point-to-point
+
+interface Loopback1
+   ip address 10.22.37.1/32
+
+no ip icmp redirect
+
+router ospf 1
+   router-id 10.22.37.1
+   bfd default
+   passive-interface Loopback1
+   network 10.22.32.0/21 area 0.0.0.1
+end
+'''
+
+#### Настройки коммутатора L2:
+'''
+hostname L2
+
+interface Ethernet1
+   no switchport
+   ip address 10.22.32.3/31
+   ip ospf network point-to-point
+
+interface Ethernet2
+   no switchport
+   ip address 10.22.32.67/31
+   ip ospf network point-to-point
+
+interface Loopback1
+   ip address 10.22.37.2/32
+
+no ip icmp redirect
+
+router ospf 1
+   router-id 10.22.37.2
+   bfd default
+   passive-interface Loopback1
+   network 10.22.32.0/21 area 0.0.0.1
+end
+'''
+
+#### Настройки коммутатора L3:
+'''
+hostname L3
+
+interface Ethernet1
+   no switchport
+   ip address 10.22.32.5/31
+   ip ospf network point-to-point
+
+interface Ethernet2
+   no switchport
+   ip address 10.22.32.69/31
+   ip ospf network point-to-point
+
+interface Loopback1
+   ip address 10.22.37.3/32
+
+no ip icmp redirect
+
+router ospf 1
+   router-id 10.22.37.3
+   bfd default
+   passive-interface Loopback1
+   network 10.22.32.0/21 area 0.0.0.1
+end
+'''
+
+### Проверка результатов
+
+Проверяем настройки адресов на интерфейсах командой ***show ip interface breaf***:
+
+| S1 | S2 |
+|---|---|
+| ![](./img/sh_ip_s1.png) | ![](./img/sh_ip_s2.png) | 
+
+| L1 | L2 | L3 |
+|---|---|---|
+| ![](./img/sh_ip_l1.png) | ![](./img/sh_ip_l2.png) | ![](./img/sh_ip_l3.png) | 
 
