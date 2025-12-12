@@ -54,7 +54,7 @@
 Применяем приведенные настройки IP адресов на интерфейсах коммутаторов. Так же настраиваем hostname, отключаем icmp redirect и создаем базовую конфигурацию ospf для обеспечения связности.
 
 #### Настройки коммутатора S1:
-'''
+```
 hostname S1
 
 interface Ethernet1
@@ -83,10 +83,10 @@ router ospf 1
    passive-interface Loopback1
    network 10.22.32.0/21 area 0.0.0.1
 end
-'''
+```
 
 #### Настройки коммутатора S2:
-'''
+```
 hostname S2
 
 interface Ethernet1
@@ -115,10 +115,10 @@ router ospf 1
    passive-interface Loopback1
    network 10.22.32.0/21 area 0.0.0.1
 end
-'''
+```
 
 #### Настройки коммутатора L1:
-'''
+```
 hostname L1
 
 interface Ethernet1
@@ -142,10 +142,10 @@ router ospf 1
    passive-interface Loopback1
    network 10.22.32.0/21 area 0.0.0.1
 end
-'''
+```
 
 #### Настройки коммутатора L2:
-'''
+```
 hostname L2
 
 interface Ethernet1
@@ -169,10 +169,10 @@ router ospf 1
    passive-interface Loopback1
    network 10.22.32.0/21 area 0.0.0.1
 end
-'''
+```
 
 #### Настройки коммутатора L3:
-'''
+```
 hostname L3
 
 interface Ethernet1
@@ -196,7 +196,7 @@ router ospf 1
    passive-interface Loopback1
    network 10.22.32.0/21 area 0.0.0.1
 end
-'''
+```
 
 ### Проверка результатов
 
@@ -208,5 +208,5 @@ end
 
 | L1 | L2 | L3 |
 |---|---|---|
-| ![](./img/sh_ip_l1.png) | ![](./img/sh_ip_l2.png) | ![](./img/sh_ip_l3.png) | 
+| ![](./img/sh_ip_L1.png) | ![](./img/sh_ip_L2.png) | ![](./img/sh_ip_L3.png) | 
 
