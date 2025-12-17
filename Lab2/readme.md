@@ -44,8 +44,8 @@
 
 | If\Sw | L1 | L2 | L3 |
 |---|--|--|--|
-| Ethernet 7 | 172.22.1.1/24 | 172.22.2.1/24 | 172.22.3.1/24 |
-| Ethernet 8 | | | 172.22.1.1/24 |
+| Ethernet 7 | | | 172.22.1.1/24 |
+| Ethernet 8 | 172.22.1.1/24 | 172.22.2.1/24 | 172.22.3.1/24 |
 
 Настройки IP на клиентских устройствах:
 
@@ -56,174 +56,278 @@
 | C2 | 172.22.3.33/24 | 172.22.3.1 |
 | C2 | 172.22.4.44/24 | 172.22.4.1 |
 
-Применяем приведенные настройки IP адресов на интерфейсах коммутаторов. Так же настраиваем hostname, отключаем icmp redirect и создаем базовую конфигурацию ospf для обеспечения связности.
+
+### Выполняем настройки на коммутаторах:
+
+- Настраиваем недостающие IP интерфейсы;
+- Удаляем команду ***network*** из секции router, вместо этого настраиваем ***ip ospf area 1*** на всех интерфейсах;
+- В секции router настраиваем ***passive-interface default***, при этом конфигурируем ***no passive-interface*** для всех пиринговых интерфейсов;
+- на всех пиринговых интерфейсах настраиваем MD5-авторизацию;
+- на всех пиринговых интерфейсах настраиваем таймеры BFD;
+- настраивам IP адреса на клиентских устройствах.
+
+### Итоговые настройки коммутаторов:
 
 #### Настройки коммутатора S1:
 ```
 hostname S1
-
+!
 interface Ethernet1
    no switchport
    ip address 10.22.32.0/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 hV3NKSyxpKdZ7xwI+saYcw==
+!
 interface Ethernet2
    no switchport
    ip address 10.22.32.2/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 7MMBSiVo8fUjrqpL9/iwUA==
+!
 interface Ethernet3
    no switchport
    ip address 10.22.32.4/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 7MMBSiVo8fUjrqpL9/iwUA==
+!
 interface Loopback1
    ip address 10.22.36.1/32
+   ip ospf area 0.0.0.1
 !
+ip routing
 no ip icmp redirect
 !
 router ospf 1
    router-id 10.22.36.1
    bfd default
-   passive-interface Loopback1
-   network 10.22.32.0/21 area 0.0.0.1
+   passive-interface default
+   no passive-interface Ethernet1
+   no passive-interface Ethernet2
+   no passive-interface Ethernet3
+   max-lsa 12000
+!
 end
 ```
 
 #### Настройки коммутатора S2:
 ```
 hostname S2
-
+!
 interface Ethernet1
    no switchport
    ip address 10.22.32.64/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 hV3NKSyxpKdZ7xwI+saYcw==
+!
 interface Ethernet2
    no switchport
    ip address 10.22.32.66/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 7MMBSiVo8fUjrqpL9/iwUA==
+!
 interface Ethernet3
    no switchport
    ip address 10.22.32.68/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 7MMBSiVo8fUjrqpL9/iwUA==
+!
 interface Loopback1
    ip address 10.22.36.2/32
-
+   ip ospf area 0.0.0.1
+!
+ip routing
 no ip icmp redirect
-
+!
 router ospf 1
    router-id 10.22.36.2
    bfd default
-   passive-interface Loopback1
-   network 10.22.32.0/21 area 0.0.0.1
+   passive-interface default
+   no passive-interface Ethernet1
+   no passive-interface Ethernet2
+   no passive-interface Ethernet3
+   max-lsa 12000
+!
 end
 ```
 
 #### Настройки коммутатора L1:
 ```
 hostname L1
-
+!
 interface Ethernet1
    no switchport
    ip address 10.22.32.1/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 hV3NKSyxpKdZ7xwI+saYcw==
+!
 interface Ethernet2
    no switchport
    ip address 10.22.32.65/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 7MMBSiVo8fUjrqpL9/iwUA==
+!
+interface Ethernet8
+   no switchport
+   ip address 172.22.1.1/24
+   ip ospf area 0.0.0.1
+!
 interface Loopback1
    ip address 10.22.37.1/32
-
+   ip ospf area 0.0.0.1
+!
+ip routing
 no ip icmp redirect
-
+!
 router ospf 1
    router-id 10.22.37.1
    bfd default
-   passive-interface Loopback1
-   network 10.22.32.0/21 area 0.0.0.1
+   passive-interface default
+   no passive-interface Ethernet1
+   no passive-interface Ethernet2
+   max-lsa 12000
+!
 end
 ```
 
 #### Настройки коммутатора L2:
 ```
 hostname L2
-
+!
 interface Ethernet1
    no switchport
    ip address 10.22.32.3/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 hV3NKSyxpKdZ7xwI+saYcw==
+!
 interface Ethernet2
    no switchport
    ip address 10.22.32.67/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 7MMBSiVo8fUjrqpL9/iwUA==
+!
+interface Ethernet8
+   no switchport
+   ip address 172.22.2.1/24
+   ip ospf area 0.0.0.1
+!
 interface Loopback1
    ip address 10.22.37.2/32
-
+   ip ospf area 0.0.0.1
+!
+interface Management1
+!
+ip routing
 no ip icmp redirect
-
+!
 router ospf 1
    router-id 10.22.37.2
    bfd default
-   passive-interface Loopback1
-   network 10.22.32.0/21 area 0.0.0.1
+   passive-interface default
+   no passive-interface Ethernet1
+   no passive-interface Ethernet2
+   max-lsa 12000
+!
 end
 ```
 
 #### Настройки коммутатора L3:
 ```
 hostname L3
-
+!
 interface Ethernet1
    no switchport
    ip address 10.22.32.5/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 hV3NKSyxpKdZ7xwI+saYcw==
+!
 interface Ethernet2
    no switchport
    ip address 10.22.32.69/31
+   bfd interval 100 min-rx 100 multiplier 3
    ip ospf network point-to-point
-
+   ip ospf authentication message-digest
+   ip ospf area 0.0.0.1
+   ip ospf message-digest-key 1 md5 7 7MMBSiVo8fUjrqpL9/iwUA==
+!
+interface Ethernet7
+   no switchport
+   ip address 172.22.3.1/24
+   ip ospf area 0.0.0.1
+!
+interface Ethernet8
+   no switchport
+   ip address 172.22.4.1/24
+   ip ospf area 0.0.0.1
+!
 interface Loopback1
    ip address 10.22.37.3/32
-
+   ip ospf area 0.0.0.1
+!
+ip routing
 no ip icmp redirect
-
+!
 router ospf 1
    router-id 10.22.37.3
    bfd default
-   passive-interface Loopback1
-   network 10.22.32.0/21 area 0.0.0.1
+   passive-interface default
+   no passive-interface Ethernet1
+   no passive-interface Ethernet2
+   max-lsa 12000
+!
 end
 ```
 
 ### Проверка результатов
 
 show ip ospf interface | i (is up|State|Neigh|auth)
+
 show bfd peers detail | i (Peer|^TxInt:)
 
 
-Проверяем настройки адресов на интерфейсах командой ***show ip interface breaf***:
-
-| S1 | S2 |
-|---|---|
-| ![](./img/sh_ip_s1.png) | ![](./img/sh_ip_s2.png) | 
-
-| L1 | L2 | L3 |
-|---|---|---|
-| ![](./img/sh_ip_L1.png) | ![](./img/sh_ip_L2.png) | ![](./img/sh_ip_L3.png) | 
+Проверяем настройки адресов на интерфейсах:
+![](./img/sh_ip_if.png)
 
 Проверяем состояние OSPF интерфейсов и соседства:
 ![](./img/sh_ip_ospf.png)
 
-Проверяем таблицу маршрутизации. Обращаем внимание, что на каждом каждом leaf есть два маршрута с равной стоимость до loopback адресов соседей: 
+Проверяем таблицу маршрутизации, убеждаемся, что все клиентские подсети присутствуют в таблице всех коммутаторов: 
 ![](./img/sh_ip_route.png)
+
+Проверяем настройки OSPF интерфейсов. Убеждаемся, что Loopback и клиентские интерфейсы являются passive, что на пиринговых интерфейсах включена авторизация. Так же проверяем настройки таймеров BFD: 
+![](./img/sh_ip_ospf2.png)
 
 Проверяем IP-связность между leaf коммутатора, выполнив ping c каждого коммутатора до loopback его соседей:
 ![](./img/ping.png)
