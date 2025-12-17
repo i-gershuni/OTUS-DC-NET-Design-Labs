@@ -312,11 +312,6 @@ end
 
 ### Проверка результатов
 
-show ip ospf interface | i (is up|State|Neigh|auth)
-
-show bfd peers detail | i (Peer|^TxInt:)
-
-
 ##### Проверяем настройки адресов на интерфейсах:
 ![](./img/sh_ip_if.png)
 
