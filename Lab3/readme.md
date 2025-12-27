@@ -19,7 +19,7 @@
 ![Схема сети, используемая в данной лабораторной работе](./img/topology_lab3.png)
 
 
-### IPv4 адресация, используемаяв данной работе
+### IPv4 адресация, используемая в данной работе
 
 
 IPv4 адресация для устройств на стенде приведена в таблицах ниже.
@@ -58,42 +58,37 @@ IPv4 адресация для устройств на стенде привед
 | **C4** | 172.22.4.44/24 | 172.22.4.1 |
 
 
-Для IPv6 адресного плана, чтобы долго не думать, возмем за основу адресацию IPv4, просто переложив адреса IPv4 в последние 4 октета адреса IPv6  в диапазоне ULA (Unique Local Address) (fc00::/7) 
+Для IPv6 адресов клиентских подсетей и loopback возмем произвольные адреса в диапазоне ULA (Unique Local Address) (fc00::/7). 
+Для P2P сетей будем использовать link-local адреса.
 
 ### IPv6 адресация, используемая в данной работе
 
-#### Подсети, выделенные для P2P интерфейсов:
-
-| P2P |	L1 | L2 | L3 |
-|---|----|---|---|
-| **S1** | fc00::a16:2000/127 | fc00::a16:2002/127 | fc00::a16:2004/127 |
-| **S2** | fc00::a16:2040/127 | fc00::a16:2042/127 | fc00::a16:2044/127 |
 
 #### Адреса Loopback интерфейсов:
 
 |  Spine |	S1 | S2 |
 |-------------|---------------|---------------|
-| loopback | fc00::a16:2401/128 | fc00::a16:2402/128 |
+| loopback | fc00::a:1/128 |  fc00::a:2/128  |
 
 |  Leaf |	L1 | L2 | L3 |
 |-------------|---------------|---------------|------------|
-| loopback |	fc00::a16:2501/128 | fc00::a16:2502/128 | fc00::a16:2503/128 |
+| loopback |  fc00::b:1/128  | fc00::b:2/128 | fc00::b:3/128 |
 
 #### Адреса интерфейсов в сторону клиентских подсетей:
 
 | If\Sw | L1 | L2 | L3 |
 |---|--|--|--|
-| **Ethernet 7** | | | fc00::ac16:301/120 |
-| **Ethernet 8** | fc00::ac16:101/120 | fc00::ac16:101/120 | fc00::ac16:401/120 |
+| **Ethernet 7** | | | fc00::c3.1/112 |
+| **Ethernet 8** | fc00::c1:1/112 | fc00::c2:1/112 | fc00::c4:1/112 |
 
 #### Настройки IP на клиентских устройствах:
 
 | Client | IP Addr | Def GW |
 |---|---|---|
-| **C1** | fc00::ac16:111/120 | fc00::ac16:101 |
-| **C2** | fc00::ac16:222/120 | fc00::ac16:201 |
-| **C3** | fc00::ac16:333/120 | fc00::ac16:301 |
-| **C4** | fc00::ac16:444/120 | fc00::ac16:401 |
+| **C1** | fc00::c1:11/120 | fc00::c1.1 |
+| **C2** | fc00::c2:22/120 | fc00::c2.1 |
+| **C3** | fc00::c3:33/120 | fc00::c3.1 |
+| **C4** | fc00::c4:44/120 | fc00::c4.1 |
 
 
 
@@ -120,7 +115,8 @@ IPv4 адресация для устройств на стенде привед
 #### Настраиваем интерфейсы
 
 - включаем на коммутаторе маршрутизацию IPv6;
-- на всех интерфейсах настраивает IPv6 адрес в дополнение к уже существующему IPv4;
+- включаем на интерфейсах IPv6;
+- на loopback и клиентских интерфейсах настраивает IPv6 адрес в дополнение к уже существующему IPv4;
 - включаем на интерфейсе протокол IS-IS для instance Underlay;
 - настраиваем тип интерфейса L1 и тип сети point-to-point;
 - включаем BFD и настраиваем рекомендованные значения таймеров;
@@ -138,7 +134,7 @@ interface Ethernet1
    no switchport
    ip address 10.22.32.0/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2000/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -151,7 +147,7 @@ interface Ethernet2
    no switchport
    ip address 10.22.32.2/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2002/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -164,7 +160,7 @@ interface Ethernet3
    no switchport
    ip address 10.22.32.4/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2004/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -174,7 +170,7 @@ interface Ethernet3
 !
 interface Loopback1
    ip address 10.22.36.1/32
-   ipv6 address fc00::a16:2401/128
+   ipv6 address fc00::a:1/128
    isis enable Underlay
    isis passive
 !
@@ -204,7 +200,7 @@ interface Ethernet1
    no switchport
    ip address 10.22.32.64/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2040/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -217,7 +213,7 @@ interface Ethernet2
    no switchport
    ip address 10.22.32.66/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2042/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -230,7 +226,7 @@ interface Ethernet3
    no switchport
    ip address 10.22.32.68/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2044/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -240,7 +236,7 @@ interface Ethernet3
 !
 interface Loopback1
    ip address 10.22.36.2/32
-   ipv6 address fc00::a16:2402/128
+   ipv6 address fc00::a:2/128
    isis enable Underlay
    isis passive
 !
@@ -270,7 +266,7 @@ interface Ethernet1
    no switchport
    ip address 10.22.32.1/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2001/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -283,7 +279,7 @@ interface Ethernet2
    no switchport
    ip address 10.22.32.65/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2040/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -295,13 +291,13 @@ interface Ethernet8
    description ClientSubNet1
    no switchport
    ip address 172.22.1.1/24
-   ipv6 address fc00::ac16:101/120
+   ipv6 address fc00::c1:1/112
    isis enable Underlay
    isis passive
 !
 interface Loopback1
    ip address 10.22.37.1/32
-   ipv6 address fc00::a16:2501/128
+   ipv6 address fc00::b:1/128
    isis enable Underlay
    isis passive
 !
@@ -331,7 +327,7 @@ interface Ethernet1
    no switchport
    ip address 10.22.32.3/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2003/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -344,7 +340,7 @@ interface Ethernet2
    no switchport
    ip address 10.22.32.67/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2043/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -356,13 +352,13 @@ interface Ethernet8
    description ClientSubNet2
    no switchport
    ip address 172.22.2.1/24
-   ipv6 address fc00::ac16:201/120
+   ipv6 address fc00::c2:1/112
    isis enable Underlay
    isis passive
 !
 interface Loopback1
    ip address 10.22.37.2/32
-   ipv6 address fc00::a16:2502/128
+   ipv6 address fc00::b:2/128
    isis enable Underlay
    isis passive
 !
@@ -392,7 +388,7 @@ interface Ethernet1
    no switchport
    ip address 10.22.32.5/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2005/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -405,7 +401,7 @@ interface Ethernet2
    no switchport
    ip address 10.22.32.69/31
    bfd interval 100 min-rx 100 multiplier 3
-   ipv6 address fc00::a16:2045/127
+   ipv6 enable
    isis enable Underlay
    isis bfd
    isis circuit-type level-1
@@ -417,7 +413,7 @@ interface Ethernet7
    description ClientSubNet3
    no switchport
    ip address 172.22.3.1/24
-   ipv6 address fc00::ac16:301/120
+   ipv6 address fc00::c3:1/112
    isis enable Underlay
    isis passive
 !
@@ -425,13 +421,13 @@ interface Ethernet8
    description ClientSubNet4
    no switchport
    ip address 172.22.4.1/24
-   ipv6 address fc00::ac16:401/120
+   ipv6 address fc00::c4:1/112
    isis enable Underlay
    isis passive
 !
 interface Loopback1
    ip address 10.22.37.3/32
-   ipv6 address fc00::a16:2503/128
+   ipv6 address fc00::b:3/128
    isis enable Underlay
    isis passive
 !
@@ -458,3 +454,9 @@ end
 
 ##### Проверяем настройки адресов на интерфейсах:
 ![](./img/sh_ip_if.png)
+
+##### Проверяем IS-IS интерфейсы, убеждаемся, что включена поддержка IPv4 и IPv6:
+![](./img/sh_isis_if1.png)
+![](./img/sh_isis_if2.png)
+
+
