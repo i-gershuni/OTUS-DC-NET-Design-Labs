@@ -459,6 +459,9 @@ end
 ![](./img/sh_isis_if1.png)
 ![](./img/sh_isis_if2.png)
 
+#### Проверяем соседство и сетевую топологию IS-IS:
+![](./img/sh_isis_neib.png)
+ 
 ##### Посмотрим на IS-IS database (приводится вывод только с одного коммутатора, на остальных вывод аналогичный):
 ```
 S1#show isis database detail 
@@ -576,3 +579,12 @@ IS-IS Instance: Underlay VRF: default
         Area leader priority: 250 algorithm: 0
 S1#
 ```
+
+#### Проверяем таблицу маршрутизации IPv4:
+![](./img/sh_ip4_route1.png)
+![](./img/sh_ip4_route2.png)
+
+#### Проверяем таблицу маршрутизации IPv6:
+![](./img/sh_ip6_route1.png)
+![](./img/sh_ip6_route2.png)
+
