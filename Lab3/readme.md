@@ -4,14 +4,14 @@
 ## Underlay. IS-IS
 
 ### Цель:
-Настроить IS_IS для Underlay сети.
+Настроить IS-IS для Underlay сети.
 
 
 
 ### Выполнение
 
 Для выполнения данной работы используем топологию сети и IPv4 адресацию, разработанную в [лабораторной работе №1](https://github.com/i-gershuni/OTUS-DC-NET-Design-Labs/tree/82b7ce8b1be000731163ed32d370006d2b370917/Lab1).
-Кроме того, чтобы немного развлечься, предположим, что у нас в планах предстоит мигрирация на IPv6, поэтому кроме IPv4 Underlay мы хотим развернуть так же IPv6 Underlay сеть в режиме Dual-Stack.
+Кроме того, чтобы немного развлечься, предположим, что у нас в планах предстоит мигрирация на IPv6, поэтому кроме IPv4 Underlay мы хотим развернуть так же IPv6 Underlay в режиме Dual-Stack.
 
 
 Схема сети, используемая в данной работе, представлена на рисунке ниже.
@@ -459,4 +459,120 @@ end
 ![](./img/sh_isis_if1.png)
 ![](./img/sh_isis_if2.png)
 
+##### Посмотрим на IS-IS database (приводится вывод только с одного коммутатора, на остальных вывод аналогичный):
+```
+S1#show isis database detail 
 
+IS-IS Instance: Underlay VRF: default
+  IS-IS Level 1 Link State Database
+    LSPID                   Seq Num  Cksum  Life Length IS Flags
+    S1.00-00                   4382  17364  1186    185 L1 <>
+      LSP generation remaining wait time: 0 ms
+      Time remaining until refresh: 886 s
+      NLPID: 0xCC(IPv4) 0x8E(IPv6)
+      Hostname: S1
+      Area addresses: 49.0022
+      Interface address: 10.22.32.4
+      Interface address: 10.22.32.2
+      Interface address: 10.22.36.1
+      Interface address: 10.22.32.0
+      Interface address: fc00::a:1
+      IS Neighbor          : L3.00               Metric: 10
+      IS Neighbor          : L2.00               Metric: 10
+      IS Neighbor          : L1.00               Metric: 10
+      Reachability         : 10.22.32.4/31 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.32.2/31 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.36.1/32 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.32.0/31 Metric: 10 Type: 1 Up
+      Reachability          : fc00::a:1/128 Metric: 10 Type: 1 Up
+      Router Capabilities: Router Id: 10.22.36.1 Flags: []
+        Area leader priority: 250 algorithm: 0
+    S2.00-00                   3988  18387   883    185 L1 <>
+      Remaining lifetime received: 1199 s Modified to: 1200 s
+      NLPID: 0xCC(IPv4) 0x8E(IPv6)
+      Hostname: S2
+      Area addresses: 49.0022
+      Interface address: 10.22.36.2
+      Interface address: 10.22.32.68
+      Interface address: 10.22.32.66
+      Interface address: 10.22.32.64
+      Interface address: fc00::a:2
+      IS Neighbor          : L1.00               Metric: 10
+      IS Neighbor          : L3.00               Metric: 10
+      IS Neighbor          : L2.00               Metric: 10
+      Reachability         : 10.22.36.2/32 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.32.68/31 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.32.66/31 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.32.64/31 Metric: 10 Type: 1 Up
+      Reachability          : fc00::a:2/128 Metric: 10 Type: 1 Up
+      Router Capabilities: Router Id: 10.22.36.2 Flags: []
+        Area leader priority: 250 algorithm: 0
+    L1.00-00                   2811  37943   648    209 L1 <>
+      Remaining lifetime received: 1199 s Modified to: 1200 s
+      NLPID: 0xCC(IPv4) 0x8E(IPv6)
+      Hostname: L1
+      Area addresses: 49.0022
+      Interface address: 10.22.32.65
+      Interface address: 172.22.1.1
+      Interface address: 10.22.32.1
+      Interface address: 10.22.37.1
+      Interface address: fc00::b:1
+      Interface address: fc00::c1:1
+      IS Neighbor          : S2.00               Metric: 10
+      IS Neighbor          : S1.00               Metric: 10
+      Reachability         : 10.22.32.64/31 Metric: 10 Type: 1 Up
+      Reachability         : 172.22.1.0/24 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.32.0/31 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.37.1/32 Metric: 10 Type: 1 Up
+      Reachability          : fc00::b:1/128 Metric: 10 Type: 1 Up
+      Reachability          : fc00::c1:0/112 Metric: 10 Type: 1 Up
+      Router Capabilities: Router Id: 10.22.37.1 Flags: []
+        Area leader priority: 250 algorithm: 0
+    L2.00-00                   3028  20622   730    209 L1 <>
+      Remaining lifetime received: 1199 s Modified to: 1200 s
+      NLPID: 0xCC(IPv4) 0x8E(IPv6)
+      Hostname: L2
+      Area addresses: 49.0022
+      Interface address: 172.22.2.1
+      Interface address: 10.22.32.67
+      Interface address: 10.22.32.3
+      Interface address: 10.22.37.2
+      Interface address: fc00::b:2
+      Interface address: fc00::c2:1
+      IS Neighbor          : S1.00               Metric: 10
+      IS Neighbor          : S2.00               Metric: 10
+      Reachability         : 172.22.2.0/24 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.32.66/31 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.32.2/31 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.37.2/32 Metric: 10 Type: 1 Up
+      Reachability          : fc00::b:2/128 Metric: 10 Type: 1 Up
+      Reachability          : fc00::c2:0/112 Metric: 10 Type: 1 Up
+      Router Capabilities: Router Id: 10.22.37.2 Flags: []
+        Area leader priority: 250 algorithm: 0
+    L3.00-00                   3143  63105   768    257 L1 <>
+      Remaining lifetime received: 1199 s Modified to: 1200 s
+      NLPID: 0xCC(IPv4) 0x8E(IPv6)
+      Hostname: L3
+      Area addresses: 49.0022
+      Interface address: 172.22.4.1
+      Interface address: 172.22.3.1
+      Interface address: 10.22.32.69
+      Interface address: 10.22.32.5
+      Interface address: 10.22.37.3
+      Interface address: fc00::b:3
+      Interface address: fc00::c4:1
+      Interface address: fc00::c3:1
+      IS Neighbor          : S1.00               Metric: 10
+      IS Neighbor          : S2.00               Metric: 10
+      Reachability         : 172.22.4.0/24 Metric: 10 Type: 1 Up
+      Reachability         : 172.22.3.0/24 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.32.68/31 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.32.4/31 Metric: 10 Type: 1 Up
+      Reachability         : 10.22.37.3/32 Metric: 10 Type: 1 Up
+      Reachability          : fc00::b:3/128 Metric: 10 Type: 1 Up
+      Reachability          : fc00::c4:0/112 Metric: 10 Type: 1 Up
+      Reachability          : fc00::c3:0/112 Metric: 10 Type: 1 Up
+      Router Capabilities: Router Id: 10.22.37.3 Flags: []
+        Area leader priority: 250 algorithm: 0
+S1#
+```
