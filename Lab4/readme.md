@@ -62,11 +62,11 @@ IPv4 адресация для устройств на стенде привед
 
 #### Настраиваем интерфейсы
 - настраиваем IP адреса на пиринговых интерфейсах, loopback'ах и интерфейсах в сторону клиентов в соответствии с вышеприведенными таблицами;
-- на пиринговых интерфейсах настраиваем MTU 9214 ***(Помним, что в виртуальной среде эта настройка может быть источником проблемы, но в реальном мире для MTU рекомендуется это значение)***;
+- на пиринговых интерфейсах настраиваем MTU 9216 ***(Помним, что в виртуальной среде эта настройка может быть источником проблемы, но в реальном мире для MTU рекомендуется это значение)***;
 
 #### Настраиваем eBGP маршрутизацию
 
-- на всех коммутаторах создаем BGP маршрутзатор с номером AS согласно нижепривежденной таблице. Для исключения проблемы path-hunting все Spine помещаются в одну AS, а каждый Leaf в отдельную AS:
+- на всех коммутаторах создаем BGP маршрутзатор с номером AS согласно нижепривежденной таблице. Согласно полученным рекомендациям по дизайну underlay на eBGP, для всех Spine используется единая AS, а каждый Leaf помещается в свою отдельную AS:
 
 | Коммутатор | Номер AS |
 |-----------|----------|
@@ -83,7 +83,7 @@ IPv4 адресация для устройств на стенде привед
 	-- настраиваем авторизацию;
 	-- для ускорения схождения включаем протокол BFD и обнуляем задержку отправки route update;
 - для группы UNDERLAY на всех Leaf настраиваем номер соседской AS 65500;
-- на Spine коммутаторах для группы UNDERLAY настраиваем listen range  для диапазона адресов 10.22.32.0/22 и вешаем на него peer-filter, разрешающий подключение соседей из диапазона AS  65501-65532. Это позводит нам не прописывать отдельно соседство с каждым Leaf коммутатором;
+- на Spine коммутаторах для группы UNDERLAY настраиваем listen range  для диапазона адресов 10.22.32.0/22 и вешаем на него peer-filter, разрешающий подключение соседей из диапазона AS  65501-65532. Это позводит нам не прописывать соседство с каждым Leaf коммутатором отдельно;
 - создаем address-family ipv4, в котором активируем группу соседей UNDERLAY и добавляем туда анонсируемые подсети -- адреса loopback интерфейсов и подсети клиентов C1-C4.
 
 
@@ -95,19 +95,19 @@ hostname S1
 !
 interface Ethernet1
    description Leaf1_Et1
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.0/31
 !
 interface Ethernet2
    description Leaf2_Et1
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.2/31
 !
 interface Ethernet3
    description Leaf3_Et1
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.4/31
 !
@@ -157,19 +157,19 @@ hostname S2
 !
 interface Ethernet1
    description Leaf1_Et2
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.64/31
 !
 interface Ethernet2
    description Leaf2_Et2
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.66/31
 !
 interface Ethernet3
    description Leaf3_Et2
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.68/31
 !
@@ -219,13 +219,13 @@ hostname L1
 !
 interface Ethernet1
    description Spoke1_Et1
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.1/31
 !
 interface Ethernet2
    description Spoke2_Et1
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.65/31
 !
@@ -280,13 +280,13 @@ hostname L2
 !
 interface Ethernet1
    description Spine1_Et2
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.3/31
 !
 interface Ethernet2
    description Spine2_Et2
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.67/31
 !
@@ -341,13 +341,13 @@ hostname L3
 !
 interface Ethernet1
    description Spine1_Et3
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.5/31
 !
 interface Ethernet2
    description Spine2_Et3
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.69/31
 !
@@ -407,147 +407,20 @@ end
 ##### Проверяем настройки адресов на интерфейсах:
 ![](./img/sh_ip_if.png)
 
-##### Проверяем BGP соседство :
+##### Проверяем BGP соседство, полученные по BGP маршруты, обращаем внимание на наличие двух ECMP маршрутов до слиентских подсетей на Leaf'ах :
 ![](./img/sh_ip_bgp1.png)
 ![](./img/sh_ip_bgp2.png)
 
-#### Проверяем соседство и сетевую топологию IS-IS:
-![](./img/sh_isis_neib.png)
- 
-##### Посмотрим на IS-IS database (приводится вывод только с одного коммутатора, на остальных вывод аналогичный):
-```
-S1#show isis database detail 
+#### Проверяем итоговую таблицу маршрутизации:
+![](./img/sh_ip_route1.png)
+![](./img/sh_ip_route2.png)
 
-IS-IS Instance: Underlay VRF: default
-  IS-IS Level 1 Link State Database
-    LSPID                   Seq Num  Cksum  Life Length IS Flags
-    S1.00-00                   4382  17364  1186    185 L1 <>
-      LSP generation remaining wait time: 0 ms
-      Time remaining until refresh: 886 s
-      NLPID: 0xCC(IPv4) 0x8E(IPv6)
-      Hostname: S1
-      Area addresses: 49.0022
-      Interface address: 10.22.32.4
-      Interface address: 10.22.32.2
-      Interface address: 10.22.36.1
-      Interface address: 10.22.32.0
-      Interface address: fc00::a:1
-      IS Neighbor          : L3.00               Metric: 10
-      IS Neighbor          : L2.00               Metric: 10
-      IS Neighbor          : L1.00               Metric: 10
-      Reachability         : 10.22.32.4/31 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.32.2/31 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.36.1/32 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.32.0/31 Metric: 10 Type: 1 Up
-      Reachability          : fc00::a:1/128 Metric: 10 Type: 1 Up
-      Router Capabilities: Router Id: 10.22.36.1 Flags: []
-        Area leader priority: 250 algorithm: 0
-    S2.00-00                   3988  18387   883    185 L1 <>
-      Remaining lifetime received: 1199 s Modified to: 1200 s
-      NLPID: 0xCC(IPv4) 0x8E(IPv6)
-      Hostname: S2
-      Area addresses: 49.0022
-      Interface address: 10.22.36.2
-      Interface address: 10.22.32.68
-      Interface address: 10.22.32.66
-      Interface address: 10.22.32.64
-      Interface address: fc00::a:2
-      IS Neighbor          : L1.00               Metric: 10
-      IS Neighbor          : L3.00               Metric: 10
-      IS Neighbor          : L2.00               Metric: 10
-      Reachability         : 10.22.36.2/32 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.32.68/31 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.32.66/31 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.32.64/31 Metric: 10 Type: 1 Up
-      Reachability          : fc00::a:2/128 Metric: 10 Type: 1 Up
-      Router Capabilities: Router Id: 10.22.36.2 Flags: []
-        Area leader priority: 250 algorithm: 0
-    L1.00-00                   2811  37943   648    209 L1 <>
-      Remaining lifetime received: 1199 s Modified to: 1200 s
-      NLPID: 0xCC(IPv4) 0x8E(IPv6)
-      Hostname: L1
-      Area addresses: 49.0022
-      Interface address: 10.22.32.65
-      Interface address: 172.22.1.1
-      Interface address: 10.22.32.1
-      Interface address: 10.22.37.1
-      Interface address: fc00::b:1
-      Interface address: fc00::c1:1
-      IS Neighbor          : S2.00               Metric: 10
-      IS Neighbor          : S1.00               Metric: 10
-      Reachability         : 10.22.32.64/31 Metric: 10 Type: 1 Up
-      Reachability         : 172.22.1.0/24 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.32.0/31 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.37.1/32 Metric: 10 Type: 1 Up
-      Reachability          : fc00::b:1/128 Metric: 10 Type: 1 Up
-      Reachability          : fc00::c1:0/112 Metric: 10 Type: 1 Up
-      Router Capabilities: Router Id: 10.22.37.1 Flags: []
-        Area leader priority: 250 algorithm: 0
-    L2.00-00                   3028  20622   730    209 L1 <>
-      Remaining lifetime received: 1199 s Modified to: 1200 s
-      NLPID: 0xCC(IPv4) 0x8E(IPv6)
-      Hostname: L2
-      Area addresses: 49.0022
-      Interface address: 172.22.2.1
-      Interface address: 10.22.32.67
-      Interface address: 10.22.32.3
-      Interface address: 10.22.37.2
-      Interface address: fc00::b:2
-      Interface address: fc00::c2:1
-      IS Neighbor          : S1.00               Metric: 10
-      IS Neighbor          : S2.00               Metric: 10
-      Reachability         : 172.22.2.0/24 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.32.66/31 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.32.2/31 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.37.2/32 Metric: 10 Type: 1 Up
-      Reachability          : fc00::b:2/128 Metric: 10 Type: 1 Up
-      Reachability          : fc00::c2:0/112 Metric: 10 Type: 1 Up
-      Router Capabilities: Router Id: 10.22.37.2 Flags: []
-        Area leader priority: 250 algorithm: 0
-    L3.00-00                   3143  63105   768    257 L1 <>
-      Remaining lifetime received: 1199 s Modified to: 1200 s
-      NLPID: 0xCC(IPv4) 0x8E(IPv6)
-      Hostname: L3
-      Area addresses: 49.0022
-      Interface address: 172.22.4.1
-      Interface address: 172.22.3.1
-      Interface address: 10.22.32.69
-      Interface address: 10.22.32.5
-      Interface address: 10.22.37.3
-      Interface address: fc00::b:3
-      Interface address: fc00::c4:1
-      Interface address: fc00::c3:1
-      IS Neighbor          : S1.00               Metric: 10
-      IS Neighbor          : S2.00               Metric: 10
-      Reachability         : 172.22.4.0/24 Metric: 10 Type: 1 Up
-      Reachability         : 172.22.3.0/24 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.32.68/31 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.32.4/31 Metric: 10 Type: 1 Up
-      Reachability         : 10.22.37.3/32 Metric: 10 Type: 1 Up
-      Reachability          : fc00::b:3/128 Metric: 10 Type: 1 Up
-      Reachability          : fc00::c4:0/112 Metric: 10 Type: 1 Up
-      Reachability          : fc00::c3:0/112 Metric: 10 Type: 1 Up
-      Router Capabilities: Router Id: 10.22.37.3 Flags: []
-        Area leader priority: 250 algorithm: 0
-S1#
-```
-
-#### Проверяем таблицу маршрутизации IPv4:
-![](./img/sh_ip4_route1.png)
-![](./img/sh_ip4_route2.png)
-
-#### Проверяем таблицу маршрутизации IPv6:
-![](./img/sh_ip6_route1.png)
-![](./img/sh_ip6_route2.png)
 
 ##### Проверяем связность по IPv4 между клиентскими устройствами, выполнив ***ping*** с каждого устройства до всех его соседей:
-![](./img/ping4.png)
+![](./img/ping.png)
 
-##### И аналогично проверяем связность по IPv6:
-![](./img/ping6.png)
 
 ***
 
 ## Все работает как и было задумано!
 
-![](./img/harold.png)
