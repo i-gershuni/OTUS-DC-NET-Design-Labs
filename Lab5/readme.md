@@ -107,74 +107,53 @@ IPv4 адресация PtP интерфейсов нас в данной раб
 
 Так же включим `redistribute learned` для каждого MAC-IP VRF.
 
-В конце добавляем `address-family evpn` и в ней активируем группу OVERLAY. 
+В конце добавляем `address-family evpn`, и в ней активируем группу OVERLAY. 
 
 
+##### На Spine коммутаторах:
+
+Создаем новую peer group OVERLAY, для которой настраиваем remote-as, BFD, авторизацию и out-delay аналогично группе UNDERLAY, а кроме того для peer group OVERLAY:
+- указываем интерфейс для отправки апдейтов `update source loopback 1`;
+- настраиваем multihop `ebgp-multihop 2`;
+- настраиваем `next-hop-unchanged`;
+- включаем отправку расширенных community `send-community extended`;
+- чтобы не прописывать каждый Leaf отдельно, создаем  `bgp listen range` на диапазон loopback-адресов Leaf коммутаторов для as-range 65501-65532.
 
 
+В конце добавляем `address-family evpn`, и в ней активируем группу OVERLAY. 
 
-
-
-- на всех коммутаторах создаем BGP маршрутзатор с номером AS согласно нижепривежденной таблице. Согласно полученным рекомендациям по дизайну underlay на eBGP, для всех Spine используется единая AS, а каждый Leaf помещается в свою отдельную AS:
-
-| Коммутатор | Номер AS |
-|-----------|----------|
-| Spine S1 | 6500 |
-| Spine S2 | 6500 |
-| Leaf L1 | 6501 |
-| Leaf L2 | 6502 |
-| Leaf L3 | 6503 |
-
-- отключаем автоматическую активацию IPv4 unicast address family командой`no bgp default ipv4-unicast`;
-- настраиваем макимальное количество маршрутов для ECMP командой `maximum-paths 2 ecmp 2`;
-- настраиваем keepalive и holdtime таймеры BGP для ускорения схождения протокола командой `timers bgp 1 3`;
-- настраиваем группу BGP соседей м именем UNDERLAY, для которой:
-	-- настраиваем авторизацию;
-	-- для ускорения схождения включаем протокол BFD и обнуляем задержку отправки route update;
-- для группы UNDERLAY на всех Leaf настраиваем номер соседской AS 65500;
-- на Spine коммутаторах для группы UNDERLAY настраиваем listen range  для диапазона адресов 10.22.32.0/22 и вешаем на него peer-filter, разрешающий подключение соседей из диапазона AS  65501-65532. Это позводит нам не прописывать соседство с каждым Leaf коммутатором отдельно;
-- создаем address-family ipv4, в котором активируем группу соседей UNDERLAY и добавляем туда анонсируемые подсети -- адреса loopback интерфейсов и подсети клиентов C1-C4.
 
 
 ### Итоговые настройки коммутаторов:
 
 #### Настройки коммутатора S1:
 ```
+service routing protocols model multi-agent
+!
 hostname S1
 !
 interface Ethernet1
    description Leaf1_Et1
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.0/31
 !
 interface Ethernet2
    description Leaf2_Et1
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.2/31
 !
 interface Ethernet3
    description Leaf3_Et1
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.4/31
-!
-interface Ethernet4
-!
-interface Ethernet5
-!
-interface Ethernet6
-!
-interface Ethernet7
-!
-interface Ethernet8
 !
 interface Loopback1
    ip address 10.22.36.1/32
 !
-interface Management1
-!
+
 ip routing
 no ip icmp redirect
 !
@@ -187,11 +166,23 @@ router bgp 65500
    timers bgp 1 3
    distance bgp 20 200 200
    maximum-paths 2 ecmp 2
+   bgp listen range 10.22.37.0/24 peer-group OVERLAY peer-filter LEAVES
    bgp listen range 10.22.32.0/22 peer-group UNDERLAY peer-filter LEAVES
+   neighbor OVERLAY peer group
+   neighbor OVERLAY next-hop-unchanged
+   neighbor OVERLAY out-delay 0
+   neighbor OVERLAY update-source Loopback1
+   neighbor OVERLAY bfd
+   neighbor OVERLAY ebgp-multihop 2
+   neighbor OVERLAY password 7 oNsKUXVXX/DkdbYvVeGk2A==
+   neighbor OVERLAY send-community extended
    neighbor UNDERLAY peer group
    neighbor UNDERLAY out-delay 0
    neighbor UNDERLAY bfd
    neighbor UNDERLAY password 7 53+Z/5nyraWpgmFBkp2aHQ==
+   !
+   address-family evpn
+      neighbor OVERLAY activate
    !
    address-family ipv4
       neighbor UNDERLAY activate
@@ -202,40 +193,30 @@ end
 
 #### Настройки коммутатора S2:
 ```
+service routing protocols model multi-agent
+!
 hostname S2
 !
 interface Ethernet1
    description Leaf1_Et2
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.64/31
 !
 interface Ethernet2
    description Leaf2_Et2
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.66/31
 !
 interface Ethernet3
    description Leaf3_Et2
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.68/31
 !
-interface Ethernet4
-!
-interface Ethernet5
-!
-interface Ethernet6
-!
-interface Ethernet7
-!
-interface Ethernet8
-!
 interface Loopback1
    ip address 10.22.36.2/32
-!
-interface Management1
 !
 ip routing
 no ip icmp redirect
@@ -249,11 +230,23 @@ router bgp 65500
    timers bgp 1 3
    distance bgp 20 200 200
    maximum-paths 2 ecmp 2
+   bgp listen range 10.22.37.0/24 peer-group OVERLAY peer-filter LEAVES
    bgp listen range 10.22.32.0/22 peer-group UNDERLAY peer-filter LEAVES
+   neighbor OVERLAY peer group
+   neighbor OVERLAY next-hop-unchanged
+   neighbor OVERLAY out-delay 0
+   neighbor OVERLAY update-source Loopback1
+   neighbor OVERLAY bfd
+   neighbor OVERLAY ebgp-multihop 2
+   neighbor OVERLAY password 7 oNsKUXVXX/DkdbYvVeGk2A==
+   neighbor OVERLAY send-community extended
    neighbor UNDERLAY peer group
    neighbor UNDERLAY out-delay 0
    neighbor UNDERLAY bfd
    neighbor UNDERLAY password 7 53+Z/5nyraWpgmFBkp2aHQ==
+   !
+   address-family evpn
+      neighbor OVERLAY activate
    !
    address-family ipv4
       neighbor UNDERLAY activate
@@ -264,39 +257,36 @@ end
 
 #### Настройки коммутатора L1:
 ```
+service routing protocols model multi-agent
+!
 hostname L1
+!
+vlan 101
+   name Zone1
 !
 interface Ethernet1
    description Spoke1_Et1
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.1/31
 !
 interface Ethernet2
    description Spoke2_Et1
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.65/31
 !
-interface Ethernet3
-!
-interface Ethernet4
-!
-interface Ethernet5
-!
-interface Ethernet6
-!
-interface Ethernet7
-!
 interface Ethernet8
-   description ClientSubNet1
-   no switchport
-   ip address 172.22.1.1/24
+   description Client1
+   switchport access vlan 101
 !
 interface Loopback1
    ip address 10.22.37.1/32
 !
-interface Management1
+interface Vxlan1
+   vxlan source-interface Loopback1
+   vxlan udp-port 4789
+   vxlan vlan 101 vni 10101
 !
 ip routing
 no ip icmp redirect
@@ -307,6 +297,14 @@ router bgp 65501
    timers bgp 1 3
    distance bgp 20 200 200
    maximum-paths 2 ecmp 2
+   neighbor OVERLAY peer group
+   neighbor OVERLAY remote-as 65500
+   neighbor OVERLAY out-delay 0
+   neighbor OVERLAY update-source Loopback1
+   neighbor OVERLAY bfd
+   neighbor OVERLAY ebgp-multihop 2
+   neighbor OVERLAY password 7 oNsKUXVXX/DkdbYvVeGk2A==
+   neighbor OVERLAY send-community extended
    neighbor UNDERLAY peer group
    neighbor UNDERLAY remote-as 65500
    neighbor UNDERLAY out-delay 0
@@ -314,50 +312,57 @@ router bgp 65501
    neighbor UNDERLAY password 7 53+Z/5nyraWpgmFBkp2aHQ==
    neighbor 10.22.32.0 peer group UNDERLAY
    neighbor 10.22.32.64 peer group UNDERLAY
+   neighbor 10.22.36.1 peer group OVERLAY
+   neighbor 10.22.36.2 peer group OVERLAY
+   !
+   vlan 101
+      rd 65501:101
+      route-target both 65500:10101
+      redistribute learned
+   !
+   address-family evpn
+      neighbor OVERLAY activate
    !
    address-family ipv4
       neighbor UNDERLAY activate
       network 10.22.37.1/32
-      network 172.22.1.0/24
 !
 end
 ```
 
 #### Настройки коммутатора L2:
 ```
+service routing protocols model multi-agent
+!
 hostname L2
+!
+
+vlan 102
+   name Zone2
 !
 interface Ethernet1
    description Spine1_Et2
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.3/31
 !
 interface Ethernet2
    description Spine2_Et2
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.67/31
 !
-interface Ethernet3
-!
-interface Ethernet4
-!
-interface Ethernet5
-!
-interface Ethernet6
-!
-interface Ethernet7
-!
 interface Ethernet8
-   description ClientSubNet2
-   no switchport
-   ip address 172.22.2.1/24
+   description Client2
+   switchport access vlan 102
 !
 interface Loopback1
    ip address 10.22.37.2/32
 !
-interface Management1
+interface Vxlan1
+   vxlan source-interface Loopback1
+   vxlan udp-port 4789
+   vxlan vlan 102 vni 10102
 !
 ip routing
 no ip icmp redirect
@@ -368,6 +373,14 @@ router bgp 65502
    timers bgp 1 3
    distance bgp 20 200 200
    maximum-paths 2 ecmp 2
+   neighbor OVERLAY peer group
+   neighbor OVERLAY remote-as 65500
+   neighbor OVERLAY out-delay 0
+   neighbor OVERLAY update-source Loopback1
+   neighbor OVERLAY bfd
+   neighbor OVERLAY ebgp-multihop 2
+   neighbor OVERLAY password 7 oNsKUXVXX/DkdbYvVeGk2A==
+   neighbor OVERLAY send-community extended
    neighbor UNDERLAY peer group
    neighbor UNDERLAY remote-as 65500
    neighbor UNDERLAY out-delay 0
@@ -375,53 +388,64 @@ router bgp 65502
    neighbor UNDERLAY password 7 53+Z/5nyraWpgmFBkp2aHQ==
    neighbor 10.22.32.2 peer group UNDERLAY
    neighbor 10.22.32.66 peer group UNDERLAY
+   neighbor 10.22.36.1 peer group OVERLAY
+   neighbor 10.22.36.2 peer group OVERLAY
+   !
+   vlan 102
+      rd 65502:102
+      route-target both 65500:10102
+      redistribute learned
+   !
+   address-family evpn
+      neighbor OVERLAY activate
    !
    address-family ipv4
       neighbor UNDERLAY activate
       network 10.22.37.2/32
-      network 172.22.2.0/24
 !
 end
 ```
 
 #### Настройки коммутатора L3:
 ```
+service routing protocols model multi-agent
+!
 hostname L3
+!
+vlan 101
+   name Zone1
+!
+vlan 102
+   name Zone2
 !
 interface Ethernet1
    description Spine1_Et3
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.5/31
 !
 interface Ethernet2
    description Spine2_Et3
-   mtu 9216
+   mtu 9214
    no switchport
    ip address 10.22.32.69/31
 !
-interface Ethernet3
-!
-interface Ethernet4
-!
-interface Ethernet5
-!
-interface Ethernet6
-!
 interface Ethernet7
-   description ClientSubNet3
-   no switchport
-   ip address 172.22.3.1/24
+   description Client3
+   switchport access vlan 101
 !
 interface Ethernet8
-   description ClientSubNet4
-   no switchport
-   ip address 172.22.4.1/24
+   description Client4
+   switchport access vlan 102
 !
 interface Loopback1
    ip address 10.22.37.3/32
 !
-interface Management1
+interface Vxlan1
+   vxlan source-interface Loopback1
+   vxlan udp-port 4789
+   vxlan vlan 101 vni 10101
+   vxlan vlan 102 vni 10102
 !
 ip routing
 no ip icmp redirect
@@ -432,6 +456,14 @@ router bgp 65503
    timers bgp 1 3
    distance bgp 20 200 200
    maximum-paths 2 ecmp 2
+   neighbor OVERLAY peer group
+   neighbor OVERLAY remote-as 65500
+   neighbor OVERLAY out-delay 0
+   neighbor OVERLAY update-source Loopback1
+   neighbor OVERLAY bfd
+   neighbor OVERLAY ebgp-multihop 2
+   neighbor OVERLAY password 7 oNsKUXVXX/DkdbYvVeGk2A==
+   neighbor OVERLAY send-community extended
    neighbor UNDERLAY peer group
    neighbor UNDERLAY remote-as 65500
    neighbor UNDERLAY out-delay 0
@@ -439,12 +471,25 @@ router bgp 65503
    neighbor UNDERLAY password 7 53+Z/5nyraWpgmFBkp2aHQ==
    neighbor 10.22.32.4 peer group UNDERLAY
    neighbor 10.22.32.68 peer group UNDERLAY
+   neighbor 10.22.36.1 peer group OVERLAY
+   neighbor 10.22.36.2 peer group OVERLAY
+   !
+   vlan 101
+      rd 65503:101
+      route-target both 65500:10101
+      redistribute learned
+   !
+   vlan 102
+      rd 65503:102
+      route-target both 65500:10102
+      redistribute learned
+   !
+   address-family evpn
+      neighbor OVERLAY activate
    !
    address-family ipv4
       neighbor UNDERLAY activate
       network 10.22.37.3/32
-      network 172.22.3.0/24
-      network 172.22.4.0/24
 !
 end
 ``` 
