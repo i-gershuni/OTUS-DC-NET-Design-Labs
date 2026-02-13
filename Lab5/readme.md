@@ -498,23 +498,120 @@ end
 
 ### Проверка результатов
 
-##### Проверяем настройки адресов на интерфейсах:
-![](./img/sh_ip_if.png)
-
-##### Проверяем BGP соседство, полученные по BGP маршруты, обращаем внимание на наличие двух ECMP маршрутов до слиентских подсетей на Leaf'ах :
-![](./img/sh_ip_bgp1.png)
-![](./img/sh_ip_bgp2.png)
-
-#### Проверяем итоговую таблицу маршрутизации:
-![](./img/sh_ip_route1.png)
-![](./img/sh_ip_route2.png)
+##### Для начала с помощью команд `show bgp evpn summary` и `show bgp evpn` убедимся, что все соседства в EVPN поднялись, и что все Type 3 маршруты до наших MAC-IP VRF в наличии. Обращаем внимание, что до каждого VNI у нас есть два ECMP маршрута:
+![](./img/sh_bgp_evpn1.png)
+![](./img/sh_bgp_evpn2.png)
 
 
-##### Проверяем связность по IPv4 между клиентскими устройствами, выполнив ***ping*** с каждого устройства до всех его соседей:
+##### В таблице маршрутов мы пока не видим Type 2 маршрутов, поскольку клиенты пока все молчат. Самое время проверить связность между клиентскими устройствами с помощью ***ping***. Как и ожидалось, клиенты видят своего соседа по VNI, но соседей в соседнем VNI не видят: 
 ![](./img/ping.png)
+
+##### Теперь можно еще раз посмотреть на EVPN маршруты, и убедиться, что на всех Leaf появились два Type-2 маршрута для каждого клиентского хоста:
+![](./img/sh_bgp_macip.png)
+ 
+##### И напоследок можно более пристально посмотреть на EVPN маршруты на примере Leaf L1: 
+```
+L1#show bgp evpn detail
+BGP routing table information for VRF default
+Router identifier 10.22.37.1, local AS number 65501
+BGP routing table entry for mac-ip 0050.7966.6803, Route Distinguisher: 65501:101
+ Paths: 1 available
+  Local
+    - from - (0.0.0.0)
+      Origin IGP, metric -, localpref -, weight 0, tag 0, valid, local, best
+      Extended Community: Route-Target-AS:65500:10101 TunnelEncap:tunnelTypeVxlan
+      VNI: 10101 ESI: 0000:0000:0000:0000:0000
+BGP routing table entry for mac-ip 0050.7966.6807, Route Distinguisher: 65502:102
+ Paths: 2 available
+  65500 65502
+    10.22.37.2 from 10.22.36.1 (10.22.36.1)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP head, ECMP, best, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10102 TunnelEncap:tunnelTypeVxlan
+      VNI: 10102 ESI: 0000:0000:0000:0000:0000
+  65500 65502
+    10.22.37.2 from 10.22.36.2 (10.22.36.2)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10102 TunnelEncap:tunnelTypeVxlan
+      VNI: 10102 ESI: 0000:0000:0000:0000:0000
+BGP routing table entry for mac-ip 0050.7966.6808, Route Distinguisher: 65503:102
+ Paths: 2 available
+  65500 65503
+    10.22.37.3 from 10.22.36.2 (10.22.36.2)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP head, ECMP, best, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10102 TunnelEncap:tunnelTypeVxlan
+      VNI: 10102 ESI: 0000:0000:0000:0000:0000
+  65500 65503
+    10.22.37.3 from 10.22.36.1 (10.22.36.1)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10102 TunnelEncap:tunnelTypeVxlan
+      VNI: 10102 ESI: 0000:0000:0000:0000:0000
+BGP routing table entry for mac-ip 0050.7966.6809, Route Distinguisher: 65503:101
+ Paths: 2 available
+  65500 65503
+    10.22.37.3 from 10.22.36.2 (10.22.36.2)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP head, ECMP, best, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10101 TunnelEncap:tunnelTypeVxlan
+      VNI: 10101 ESI: 0000:0000:0000:0000:0000
+  65500 65503
+    10.22.37.3 from 10.22.36.1 (10.22.36.1)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10101 TunnelEncap:tunnelTypeVxlan
+      VNI: 10101 ESI: 0000:0000:0000:0000:0000
+BGP routing table entry for imet 10.22.37.1, Route Distinguisher: 65501:101
+ Paths: 1 available
+  Local
+    - from - (0.0.0.0)
+      Origin IGP, metric -, localpref -, weight 0, tag 0, valid, local, best
+      Extended Community: Route-Target-AS:65500:10101 TunnelEncap:tunnelTypeVxlan
+      VNI: 10101
+      PMSI Tunnel: Ingress Replication, MPLS Label: 10101, Leaf Information Required: false, Tunnel ID: 10.22.37.1
+BGP routing table entry for imet 10.22.37.2, Route Distinguisher: 65502:102
+ Paths: 2 available
+  65500 65502
+    10.22.37.2 from 10.22.36.1 (10.22.36.1)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP head, ECMP, best, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10102 TunnelEncap:tunnelTypeVxlan
+      VNI: 10102
+      PMSI Tunnel: Ingress Replication, MPLS Label: 10102, Leaf Information Required: false, Tunnel ID: 10.22.37.2
+  65500 65502
+    10.22.37.2 from 10.22.36.2 (10.22.36.2)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10102 TunnelEncap:tunnelTypeVxlan
+      VNI: 10102
+      PMSI Tunnel: Ingress Replication, MPLS Label: 10102, Leaf Information Required: false, Tunnel ID: 10.22.37.2
+BGP routing table entry for imet 10.22.37.3, Route Distinguisher: 65503:101
+ Paths: 2 available
+  65500 65503
+    10.22.37.3 from 10.22.36.1 (10.22.36.1)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP head, ECMP, best, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10101 TunnelEncap:tunnelTypeVxlan
+      VNI: 10101
+      PMSI Tunnel: Ingress Replication, MPLS Label: 10101, Leaf Information Required: false, Tunnel ID: 10.22.37.3
+  65500 65503
+    10.22.37.3 from 10.22.36.2 (10.22.36.2)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10101 TunnelEncap:tunnelTypeVxlan
+      VNI: 10101
+      PMSI Tunnel: Ingress Replication, MPLS Label: 10101, Leaf Information Required: false, Tunnel ID: 10.22.37.3
+BGP routing table entry for imet 10.22.37.3, Route Distinguisher: 65503:102
+ Paths: 2 available
+  65500 65503
+    10.22.37.3 from 10.22.36.1 (10.22.36.1)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP head, ECMP, best, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10102 TunnelEncap:tunnelTypeVxlan
+      VNI: 10102
+      PMSI Tunnel: Ingress Replication, MPLS Label: 10102, Leaf Information Required: false, Tunnel ID: 10.22.37.3
+  65500 65503
+    10.22.37.3 from 10.22.36.2 (10.22.36.2)
+      Origin IGP, metric -, localpref 100, weight 0, tag 0, valid, external, ECMP, ECMP contributor
+      Extended Community: Route-Target-AS:65500:10102 TunnelEncap:tunnelTypeVxlan
+      VNI: 10102
+      PMSI Tunnel: Ingress Replication, MPLS Label: 10102, Leaf Information Required: false, Tunnel ID: 10.22.37.3
+L1# 
+```
 
 
 ***
 
-## Все работает как и было задумано!
+## Цель работы достигнута, VxLAN EVPN для L2 связанности между клиентами настроен и работает.
 
