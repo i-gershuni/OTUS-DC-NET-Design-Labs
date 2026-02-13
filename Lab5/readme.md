@@ -107,7 +107,7 @@ IPv4 адресация PtP интерфейсов нас в данной раб
 
 Так же включим `redistribute learned` для каждого MAC-IP VRF.
 
-В конце добавляем `address-family evpn`, и в ней активируем группу OVERLAY. 
+Добавляем к router bgp новую `address-family evpn`, и в ней активируем группу OVERLAY. 
 
 
 ##### На Spine коммутаторах:
@@ -134,19 +134,19 @@ hostname S1
 !
 interface Ethernet1
    description Leaf1_Et1
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.0/31
 !
 interface Ethernet2
    description Leaf2_Et1
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.2/31
 !
 interface Ethernet3
    description Leaf3_Et1
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.4/31
 !
@@ -199,19 +199,19 @@ hostname S2
 !
 interface Ethernet1
    description Leaf1_Et2
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.64/31
 !
 interface Ethernet2
    description Leaf2_Et2
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.66/31
 !
 interface Ethernet3
    description Leaf3_Et2
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.68/31
 !
@@ -266,13 +266,13 @@ vlan 101
 !
 interface Ethernet1
    description Spoke1_Et1
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.1/31
 !
 interface Ethernet2
    description Spoke2_Et1
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.65/31
 !
@@ -342,13 +342,13 @@ vlan 102
 !
 interface Ethernet1
    description Spine1_Et2
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.3/31
 !
 interface Ethernet2
    description Spine2_Et2
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.67/31
 !
@@ -420,13 +420,13 @@ vlan 102
 !
 interface Ethernet1
    description Spine1_Et3
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.5/31
 !
 interface Ethernet2
    description Spine2_Et3
-   mtu 9214
+   mtu 9216
    no switchport
    ip address 10.22.32.69/31
 !
@@ -503,13 +503,13 @@ end
 ![](./img/sh_bgp_evpn2.png)
 
 
-##### В таблице маршрутов мы пока не видим Type 2 маршрутов, поскольку клиенты пока все молчат. Самое время проверить связность между клиентскими устройствами с помощью ***ping***. Как и ожидалось, клиенты видят своего соседа по VNI, но соседей в соседнем VNI не видят: 
+##### В таблице маршрутов мы пока не видим Type 2 маршрутов, поскольку клиенты пока все молчат. Самое время проверить связность между клиентскими устройствами с помощью ***ping***. Как и ожидалось, клиенты видят своего соседа по VNI, но клиентов в соседнем VNI не видят: 
 ![](./img/ping.png)
 
-##### Теперь можно еще раз посмотреть на EVPN маршруты, и убедиться, что на всех Leaf появились два Type-2 маршрута для каждого клиентского хоста:
+##### Теперь можно убедиться, что на всех Leaf появились два Type-2 маршрута для каждого клиентского хоста:
 ![](./img/sh_bgp_macip.png)
  
-##### И напоследок можно более пристально посмотреть на EVPN маршруты на примере Leaf L1: 
+##### И напоследок более пристально посмотрим на EVPN маршруты на примере Leaf L1: 
 ```
 L1#show bgp evpn detail
 BGP routing table information for VRF default
