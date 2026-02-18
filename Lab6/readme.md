@@ -11,7 +11,7 @@
 ### Выполнение
 
 
-В данной работе мы будем использовать Overlay, настроенный в рамках [лабораторной работе №5]<https://github.com/i-gershuni/OTUS-DC-NET-Design-Labs/tree/bfdbbb18d69a2b1a126245a5ffd671ce8e291004/Lab5>.
+В данной работе мы будем использовать Overlay, настроенный в [лабораторной работе №5](https://github.com/i-gershuni/OTUS-DC-NET-Design-Labs/tree/bfdbbb18d69a2b1a126245a5ffd671ce8e291004/Lab5).
 
 Но в данной работе мы поместим клиентов в разные VLAN, а для маршрутизации трафика между ними настроим Symmetric IRB.
 
