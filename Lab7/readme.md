@@ -67,7 +67,7 @@
 ### Выполняем настройки на коммутаторах:
 
 На всех Leaf коммутаторах создадим агрегированный порт Port-channel 1 в режиме транка. Добавим к нему порт, к которому подключен "хост" (Ethernet8).
-Для организации Multihoming настроим на Po1 evpn ethernet-segment и lacp system-id следующим образом:
+Для организации Multihoming на каждом Leaf сконфигурируем на интерфейсе Po1 `evpn ethernet-segment` и `lacp system-id`. Для лучшей предсказуемости установим алгоритм выбора designated-forwarder в preference. Значения параметров настроим следующим образом:
 
 
 | Параметр | L1 | L2 | L3 | L4 |
@@ -774,7 +774,7 @@ interface Ethernet1/2
 
 ### Проверка результатов
 
-##### Для начала проверим, собрались ли у нас port-channel. Смотрим со стороны пары Leaf и со стороны соответствующего "хоста".
+##### Для начала проверим, собрались ли у нас port-channel. Смотрим со стороны пары Leaf и со стороны соответствующего "хоста" состояние port-channel 1 и информацию о LACP.
 
 На первой паре все ОК:
 ![](./img/show_pc1.png)
@@ -782,194 +782,232 @@ interface Ethernet1/2
 На второй паре тоже все ОК:
 ![](./img/show_pc2.png)
 
+##### Посмотрим на Type4 EVPN маршруты и убедимся, что все Ethernet segment корректно проанонсировались на все коммутаторы:
+![](./img/show_evpn_esi.png)
+
+##### Посмотрим на Type1 маршруты (на примере Leaf 1), убедимся, что все per-EVI и per-ESI маршруты присутствуют:
+```
+L1#show bgp evpn route-type auto-discovery 
+BGP routing table information for VRF default
+Router identifier 10.22.37.1, local AS number 65501
+Route status codes: * - valid, > - active, S - Stale, E - ECMP head, e - ECMP
+                    c - Contributing to ECMP, % - Pending BGP convergence
+Origin codes: i - IGP, e - EGP, ? - incomplete
+AS Path Attributes: Or-ID - Originator ID, C-LST - Cluster List, LL Nexthop - Link Local Nexthop
+
+          Network                Next Hop              Metric  LocPref Weight  Path
+ * >      RD: 65501:101 auto-discovery 0 0000:0000:0000:0102:0001
+                                 -                     -       -       0       i
+ * >      RD: 65501:102 auto-discovery 0 0000:0000:0000:0102:0001
+                                 -                     -       -       0       i
+ * >      RD: 65501:103 auto-discovery 0 0000:0000:0000:0102:0001
+                                 -                     -       -       0       i
+ * >      RD: 65501:104 auto-discovery 0 0000:0000:0000:0102:0001
+                                 -                     -       -       0       i
+ * >Ec    RD: 65502:101 auto-discovery 0 0000:0000:0000:0102:0001
+                                 10.22.37.2            -       100     0       65500 65502 i
+ *  ec    RD: 65502:101 auto-discovery 0 0000:0000:0000:0102:0001
+                                 10.22.37.2            -       100     0       65500 65502 i
+ * >Ec    RD: 65502:102 auto-discovery 0 0000:0000:0000:0102:0001
+                                 10.22.37.2            -       100     0       65500 65502 i
+ *  ec    RD: 65502:102 auto-discovery 0 0000:0000:0000:0102:0001
+                                 10.22.37.2            -       100     0       65500 65502 i
+ * >Ec    RD: 65502:103 auto-discovery 0 0000:0000:0000:0102:0001
+                                 10.22.37.2            -       100     0       65500 65502 i
+ *  ec    RD: 65502:103 auto-discovery 0 0000:0000:0000:0102:0001
+                                 10.22.37.2            -       100     0       65500 65502 i
+ * >Ec    RD: 65502:104 auto-discovery 0 0000:0000:0000:0102:0001
+                                 10.22.37.2            -       100     0       65500 65502 i
+ *  ec    RD: 65502:104 auto-discovery 0 0000:0000:0000:0102:0001
+                                 10.22.37.2            -       100     0       65500 65502 i
+ * >      RD: 10.22.37.1:1 auto-discovery 0000:0000:0000:0102:0001
+                                 -                     -       -       0       i
+ * >Ec    RD: 10.22.37.2:1 auto-discovery 0000:0000:0000:0102:0001
+                                 10.22.37.2            -       100     0       65500 65502 i
+ *  ec    RD: 10.22.37.2:1 auto-discovery 0000:0000:0000:0102:0001
+                                 10.22.37.2            -       100     0       65500 65502 i
+ * >Ec    RD: 65503:101 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.3            -       100     0       65500 65503 i
+ *  ec    RD: 65503:101 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.3            -       100     0       65500 65503 i
+ * >Ec    RD: 65503:102 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.3            -       100     0       65500 65503 i
+ *  ec    RD: 65503:102 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.3            -       100     0       65500 65503 i
+ * >Ec    RD: 65503:103 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.3            -       100     0       65500 65503 i
+ *  ec    RD: 65503:103 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.3            -       100     0       65500 65503 i
+ * >Ec    RD: 65503:104 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.3            -       100     0       65500 65503 i
+ *  ec    RD: 65503:104 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.3            -       100     0       65500 65503 i
+ * >Ec    RD: 65504:101 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.4            -       100     0       65500 65504 i
+ *  ec    RD: 65504:101 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.4            -       100     0       65500 65504 i
+ * >Ec    RD: 65504:102 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.4            -       100     0       65500 65504 i
+ *  ec    RD: 65504:102 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.4            -       100     0       65500 65504 i
+ * >Ec    RD: 65504:103 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.4            -       100     0       65500 65504 i
+ *  ec    RD: 65504:103 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.4            -       100     0       65500 65504 i
+ * >Ec    RD: 65504:104 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.4            -       100     0       65500 65504 i
+ *  ec    RD: 65504:104 auto-discovery 0 0000:0000:0000:0304:0001
+                                 10.22.37.4            -       100     0       65500 65504 i
+ * >Ec    RD: 10.22.37.3:1 auto-discovery 0000:0000:0000:0304:0001
+                                 10.22.37.3            -       100     0       65500 65503 i
+ *  ec    RD: 10.22.37.3:1 auto-discovery 0000:0000:0000:0304:0001
+                                 10.22.37.3            -       100     0       65500 65503 i
+ * >Ec    RD: 10.22.37.4:1 auto-discovery 0000:0000:0000:0304:0001
+                                 10.22.37.4            -       100     0       65500 65504 i
+ *  ec    RD: 10.22.37.4:1 auto-discovery 0000:0000:0000:0304:0001
+                                 10.22.37.4            -       100     0       65500 65504 i
+```
+
+##### В EVPN instance на L1 посмотрим на настройки Local ethernet segment. Убедимся, что L1 выбран в качестве 10.22.37.1:
+```
+L1#show bgp evpn instance 
+EVPN instance: VLAN 101
+  Route distinguisher: 65501:101
+  Route target import: Route-Target-AS:65500:10101
+  Route target export: Route-Target-AS:65500:10101
+  Service interface: VLAN-based
+  Local VXLAN IP address: 10.22.37.1
+  VXLAN: enabled
+  MPLS: disabled
+  Local ethernet segment:
+    ESI: 0000:0000:0000:0102:0001
+      Interface: Port-Channel1
+      Mode: all-active
+      State: up
+      ES-Import RT: 00:00:00:01:02:01
+      DF election algorithm: preference
+      Designated forwarder: 10.22.37.1
+      Non-Designated forwarder: 10.22.37.2
+EVPN instance: VLAN 102
+  Route distinguisher: 65501:102
+  Route target import: Route-Target-AS:65500:10102
+  Route target export: Route-Target-AS:65500:10102
+  Service interface: VLAN-based
+  Local VXLAN IP address: 10.22.37.1
+  VXLAN: enabled
+  MPLS: disabled
+  Local ethernet segment:
+    ESI: 0000:0000:0000:0102:0001
+      Interface: Port-Channel1
+      Mode: all-active
+      State: up
+      ES-Import RT: 00:00:00:01:02:01
+      DF election algorithm: preference
+      Designated forwarder: 10.22.37.1
+      Non-Designated forwarder: 10.22.37.2
+EVPN instance: VLAN 103
+  Route distinguisher: 65501:103
+  Route target import: Route-Target-AS:65500:10103
+  Route target export: Route-Target-AS:65500:10103
+  Service interface: VLAN-based
+  Local VXLAN IP address: 10.22.37.1
+  VXLAN: enabled
+  MPLS: disabled
+  Local ethernet segment:
+    ESI: 0000:0000:0000:0102:0001
+      Interface: Port-Channel1
+      Mode: all-active
+      State: up
+      ES-Import RT: 00:00:00:01:02:01
+      DF election algorithm: preference
+      Designated forwarder: 10.22.37.1
+      Non-Designated forwarder: 10.22.37.2
+EVPN instance: VLAN 104
+  Route distinguisher: 65501:104
+  Route target import: Route-Target-AS:65500:10104
+  Route target export: Route-Target-AS:65500:10104
+  Service interface: VLAN-based
+  Local VXLAN IP address: 10.22.37.1
+  VXLAN: enabled
+  MPLS: disabled
+  Local ethernet segment:
+    ESI: 0000:0000:0000:0102:0001
+      Interface: Port-Channel1
+      Mode: all-active
+      State: up
+      ES-Import RT: 00:00:00:01:02:01
+      DF election algorithm: preference
+      Designated forwarder: 10.22.37.1
+      Non-Designated forwarder: 10.22.37.2
+```
 
 
-
-
-
-
-
-
----------
-
-
-##### Проверим связность между клиентскими устройствами с помощью ***ping***. Все клиенты видят друг друга, вне зависимости от того, находятся ли они в одном L2 домене или в разных: 
+##### Проверим связность между клиентскими устройствами с помощью ***ping***: 
 ![](./img/ping1.png)
 ![](./img/ping2.png)
 
 
-##### Посмотрим на EVPN маршруты (на примере L1):
+#### Проверим отказоустойчивость нашей конфигурации. 
+ - Запустим непрерывный ping с клиентс C1 до клиента C6. 
+ - С помощью Wireshark убедимся, что пинги идут через L1. 
+ - Запустим Wireshark на порту Et8 коммутатора L2. 
+ - Выключим порты Et8 на L1 и Et0/0 на H1 (в EVE как-то некорректно отрабатывается отключения порта, поэтому для верности гасим порты с обоих сторон).
+ 
+ Видим, что пинги кратковременно пропали, но восстановились:
+![](./img/ping_f.png)
 
-###### Type-2 маршруты - по два ECMP маршрута до всех соседских VNI в наличии:
-~~~
-L1#show bgp evpn route-type imet
+В Wireshark видим, что трафик теперь идет через L2:
+![](./img/wire.png)
+
+Проверяем, что маршрут до L1 пропал из EVPN маршрутов:
+```
+L3#show bgp evpn route-type ethernet-segment
 BGP routing table information for VRF default
-Router identifier 10.22.37.1, local AS number 65501
+Router identifier 10.22.37.3, local AS number 65503
 Route status codes: * - valid, > - active, S - Stale, E - ECMP head, e - ECMP
                     c - Contributing to ECMP, % - Pending BGP convergence
 Origin codes: i - IGP, e - EGP, ? - incomplete
 AS Path Attributes: Or-ID - Originator ID, C-LST - Cluster List, LL Nexthop - Link Local Nexthop
 
           Network                Next Hop              Metric  LocPref Weight  Path
- * >      RD: 65501:101 imet 10.22.37.1
+ * >Ec    RD: 10.22.37.2:1 ethernet-segment 0000:0000:0000:0102:0001 10.22.37.2
+                                 10.22.37.2            -       100     0       65500 65502 i
+ *  ec    RD: 10.22.37.2:1 ethernet-segment 0000:0000:0000:0102:0001 10.22.37.2
+                                 10.22.37.2            -       100     0       65500 65502 i
+ * >      RD: 10.22.37.3:1 ethernet-segment 0000:0000:0000:0304:0001 10.22.37.3
                                  -                     -       -       0       i
- * >      RD: 65501:102 imet 10.22.37.1
-                                 -                     -       -       0       i
- * >Ec    RD: 65502:102 imet 10.22.37.2
-                                 10.22.37.2            -       100     0       65500 65502 i
- *  ec    RD: 65502:102 imet 10.22.37.2
-                                 10.22.37.2            -       100     0       65500 65502 i
- * >Ec    RD: 65502:104 imet 10.22.37.2
-                                 10.22.37.2            -       100     0       65500 65502 i
- *  ec    RD: 65502:104 imet 10.22.37.2
-                                 10.22.37.2            -       100     0       65500 65502 i
- * >Ec    RD: 65503:103 imet 10.22.37.3
-                                 10.22.37.3            -       100     0       65500 65503 i
- *  ec    RD: 65503:103 imet 10.22.37.3
-                                 10.22.37.3            -       100     0       65500 65503 i
- * >Ec    RD: 65503:104 imet 10.22.37.3
-                                 10.22.37.3            -       100     0       65500 65503 i
- *  ec    RD: 65503:104 imet 10.22.37.3
-                                 10.22.37.3            -       100     0       65500 65503 i
-~~~
-
-###### Type-3 маршруты - по два маршрута до MAC и IP всех соседей в наличии:
-~~~
-L1#show bgp evpn route-type mac-ip
-BGP routing table information for VRF default
-Router identifier 10.22.37.1, local AS number 65501
-Route status codes: * - valid, > - active, S - Stale, E - ECMP head, e - ECMP
-                    c - Contributing to ECMP, % - Pending BGP convergence
-Origin codes: i - IGP, e - EGP, ? - incomplete
-AS Path Attributes: Or-ID - Originator ID, C-LST - Cluster List, LL Nexthop - Link Local Nexthop
-
-          Network                Next Hop              Metric  LocPref Weight  Path
- * >      RD: 65501:101 mac-ip 0050.7966.6803
-                                 -                     -       -       0       i
- * >      RD: 65501:101 mac-ip 0050.7966.6803 172.22.1.11
-                                 -                     -       -       0       i
- * >Ec    RD: 65502:102 mac-ip 0050.7966.6807
-                                 10.22.37.2            -       100     0       65500 65502 i
- *  ec    RD: 65502:102 mac-ip 0050.7966.6807
-                                 10.22.37.2            -       100     0       65500 65502 i
- * >Ec    RD: 65502:102 mac-ip 0050.7966.6807 172.22.2.22
-                                 10.22.37.2            -       100     0       65500 65502 i
- *  ec    RD: 65502:102 mac-ip 0050.7966.6807 172.22.2.22
-                                 10.22.37.2            -       100     0       65500 65502 i
- * >Ec    RD: 65503:104 mac-ip 0050.7966.6808
-                                 10.22.37.3            -       100     0       65500 65503 i
- *  ec    RD: 65503:104 mac-ip 0050.7966.6808
-                                 10.22.37.3            -       100     0       65500 65503 i
- * >Ec    RD: 65503:104 mac-ip 0050.7966.6808 172.22.4.44
-                                 10.22.37.3            -       100     0       65500 65503 i
- *  ec    RD: 65503:104 mac-ip 0050.7966.6808 172.22.4.44
-                                 10.22.37.3            -       100     0       65500 65503 i
- * >Ec    RD: 65503:103 mac-ip 0050.7966.6809
-                                 10.22.37.3            -       100     0       65500 65503 i
- *  ec    RD: 65503:103 mac-ip 0050.7966.6809
-                                 10.22.37.3            -       100     0       65500 65503 i
- * >Ec    RD: 65503:103 mac-ip 0050.7966.6809 172.22.3.33
-                                 10.22.37.3            -       100     0       65500 65503 i
- *  ec    RD: 65503:103 mac-ip 0050.7966.6809 172.22.3.33
-                                 10.22.37.3            -       100     0       65500 65503 i
- * >      RD: 65501:102 mac-ip 0050.7966.680a
-                                 -                     -       -       0       i
- * >      RD: 65501:102 mac-ip 0050.7966.680a 172.22.2.55
-                                 -                     -       -       0       i
- * >Ec    RD: 65502:104 mac-ip 0050.7966.680b
-                                 10.22.37.2            -       100     0       65500 65502 i
- *  ec    RD: 65502:104 mac-ip 0050.7966.680b
-                                 10.22.37.2            -       100     0       65500 65502 i
- * >Ec    RD: 65502:104 mac-ip 0050.7966.680b 172.22.4.66
-                                 10.22.37.2            -       100     0       65500 65502 i
- *  ec    RD: 65502:104 mac-ip 0050.7966.680b 172.22.4.66
-                                 10.22.37.2            -       100     0       65500 65502 i
-~~~
-
-###### Type-5 маршруты - по два маршрута до всех соседских подсетей в наличии:
-~~~
-L1#show bgp evpn route-type ip-prefix ipv4
-BGP routing table information for VRF default
-Router identifier 10.22.37.1, local AS number 65501
-Route status codes: * - valid, > - active, S - Stale, E - ECMP head, e - ECMP
-                    c - Contributing to ECMP, % - Pending BGP convergence
-Origin codes: i - IGP, e - EGP, ? - incomplete
-AS Path Attributes: Or-ID - Originator ID, C-LST - Cluster List, LL Nexthop - Link Local Nexthop
-
-          Network                Next Hop              Metric  LocPref Weight  Path
- * >      RD: 65501:1 ip-prefix 172.22.1.0/24
-                                 -                     -       -       0       i
- * >      RD: 65501:1 ip-prefix 172.22.2.0/24
-                                 -                     -       -       0       i
- * >Ec    RD: 65502:1 ip-prefix 172.22.2.0/24
-                                 10.22.37.2            -       100     0       65500 65502 i
- *  ec    RD: 65502:1 ip-prefix 172.22.2.0/24
-                                 10.22.37.2            -       100     0       65500 65502 i
- * >Ec    RD: 65503:1 ip-prefix 172.22.3.0/24
-                                 10.22.37.3            -       100     0       65500 65503 i
- *  ec    RD: 65503:1 ip-prefix 172.22.3.0/24
-                                 10.22.37.3            -       100     0       65500 65503 i
- * >Ec    RD: 65502:1 ip-prefix 172.22.4.0/24
-                                 10.22.37.2            -       100     0       65500 65502 i
- *  ec    RD: 65502:1 ip-prefix 172.22.4.0/24
-                                 10.22.37.2            -       100     0       65500 65502 i
- * >Ec    RD: 65503:1 ip-prefix 172.22.4.0/24
-                                 10.22.37.3            -       100     0       65500 65503 i
- *  ec    RD: 65503:1 ip-prefix 172.22.4.0/24
-                                 10.22.37.3            -       100     0       65500 65503 i
-~~~
-
-##### Посмотрим таблицу маршрутизации для vrf L3VNI на L1, убедимся, что все маршруты до наших соседей в наличии и указывают на Vxlan интерфейс:
-```
-L1#show ip route vrf L3VNI
-
-VRF: L3VNI
-Codes: C - connected, S - static, K - kernel, 
-       O - OSPF, IA - OSPF inter area, E1 - OSPF external type 1,
-       E2 - OSPF external type 2, N1 - OSPF NSSA external type 1,
-       N2 - OSPF NSSA external type2, B - Other BGP Routes,
-       B I - iBGP, B E - eBGP, R - RIP, I L1 - IS-IS level 1,
-       I L2 - IS-IS level 2, O3 - OSPFv3, A B - BGP Aggregate,
-       A O - OSPF Summary, NG - Nexthop Group Static Route,
-       V - VXLAN Control Service, M - Martian,
-       DH - DHCP client installed default route,
-       DP - Dynamic Policy Route, L - VRF Leaked,
-       G  - gRIBI, RC - Route Cache Route
-
-Gateway of last resort is not set
-
- C        172.22.1.0/24 is directly connected, Vlan101
- B E      172.22.2.22/32 [20/0] via VTEP 10.22.37.2 VNI 90000 router-mac 50:00:00:72:8b:31 local-interface Vxlan1
- C        172.22.2.0/24 is directly connected, Vlan102
- B E      172.22.3.33/32 [20/0] via VTEP 10.22.37.3 VNI 90000 router-mac 50:00:00:15:f4:e8 local-interface Vxlan1
- B E      172.22.3.0/24 [20/0] via VTEP 10.22.37.3 VNI 90000 router-mac 50:00:00:15:f4:e8 local-interface Vxlan1
- B E      172.22.4.44/32 [20/0] via VTEP 10.22.37.3 VNI 90000 router-mac 50:00:00:15:f4:e8 local-interface Vxlan1
- B E      172.22.4.66/32 [20/0] via VTEP 10.22.37.2 VNI 90000 router-mac 50:00:00:72:8b:31 local-interface Vxlan1
- B E      172.22.4.0/24 [20/0] via VTEP 10.22.37.3 VNI 90000 router-mac 50:00:00:15:f4:e8 local-interface Vxlan1
-                               via VTEP 10.22.37.2 VNI 90000 router-mac 50:00:00:72:8b:31 local-interface Vxlan1
+ * >Ec    RD: 10.22.37.4:1 ethernet-segment 0000:0000:0000:0304:0001 10.22.37.4
+                                 10.22.37.4            -       100     0       65500 65504 i
+ *  ec    RD: 10.22.37.4:1 ethernet-segment 0000:0000:0000:0304:0001 10.22.37.4
+                                 10.22.37.4            -       100     0       65500 65504 i
 ```
 
 
-##### Посмотрим таблицу MAC на L1, убедимся, что мы видим MAC адрес клиента C2 за Vxlan интерфейсом:
-```
-L1#show mac address-table
-          Mac Address Table
-------------------------------------------------------------------
 
-Vlan    Mac Address       Type        Ports      Moves   Last Move
-----    -----------       ----        -----      -----   ---------
- 101    0050.7966.6803    DYNAMIC     Et8        1       0:03:25 ago
- 101    0200.0000.1eaf    STATIC      Cpu
- 102    0050.7966.6807    DYNAMIC     Vx1        1       0:03:23 ago
- 102    0050.7966.680a    DYNAMIC     Et7        1       0:01:02 ago
- 102    0200.0000.1eaf    STATIC      Cpu
-4094    0200.0000.1eaf    STATIC      Cpu
-4094    5000.0015.f4e8    DYNAMIC     Vx1        1       2:20:20 ago
-4094    5000.0072.8b31    DYNAMIC     Vx1        1       2:20:01 ago
-Total Mac Addresses for this criterion: 8
+А роль designated-forwarder в ESI перешла к L2 
 ```
+L2#show bgp evpn instance 
+EVPN instance: VLAN 101
+  Route distinguisher: 65502:101
+  Route target import: Route-Target-AS:65500:10101
+  Route target export: Route-Target-AS:65500:10101
+  Service interface: VLAN-based
+  Local VXLAN IP address: 10.22.37.2
+  VXLAN: enabled
+  MPLS: disabled
+  Local ethernet segment:
+    ESI: 0000:0000:0000:0102:0001
+      Interface: Port-Channel1
+      Mode: all-active
+      State: up
+      ES-Import RT: 00:00:00:01:02:01
+      Designated forwarder: 10.22.37.2
+...	  	  
+```
+ 
+
 
 ***
 
-## Цель работы достигнута, VxLAN EVPN для L3 связанности между клиентами настроен и работает.
+## Цель работы достигнута, EVPN Multihoming настроен и работает.
 
