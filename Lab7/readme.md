@@ -868,7 +868,7 @@ AS Path Attributes: Or-ID - Originator ID, C-LST - Cluster List, LL Nexthop - Li
                                  10.22.37.4            -       100     0       65500 65504 i
 ```
 
-##### В EVPN instance на L1 посмотрим на настройки Local ethernet segment. Убедимся, что L1 выбран в качестве 10.22.37.1:
+##### В EVPN instance на примере L1 посмотрим на настройки Local ethernet segment. Убедимся, что L1 выбран в качестве Designated forwarder:
 ```
 L1#show bgp evpn instance 
 EVPN instance: VLAN 101
@@ -946,8 +946,9 @@ EVPN instance: VLAN 104
 ![](./img/ping1.png)
 ![](./img/ping2.png)
 
+-----
 
-#### Проверим отказоустойчивость нашей конфигурации. 
+### Проверим отказоустойчивость нашей конфигурации. 
  - Запустим непрерывный ping с клиентс C1 до клиента C6. 
  - С помощью Wireshark убедимся, что пинги идут через L1. 
  - Запустим Wireshark на порту Et8 коммутатора L2. 
