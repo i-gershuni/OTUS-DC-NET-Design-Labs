@@ -1,0 +1,101 @@
+! Command: show running-config
+! device: S2 (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname S2
+!
+spanning-tree mode mstp
+!
+interface Ethernet1
+   description Leaf1_Et2
+   no switchport
+   ip address 10.22.32.64/31
+   isis enable Underlay
+   isis circuit-type level-1
+   isis network point-to-point
+!
+interface Ethernet2
+   description Leaf2_Et2
+   no switchport
+   ip address 10.22.32.66/31
+   isis enable Underlay
+   isis circuit-type level-1
+   isis network point-to-point
+!
+interface Ethernet3
+   description Leaf3_Et2
+   no switchport
+   ip address 10.22.32.68/31
+   isis enable Underlay
+   isis circuit-type level-1
+   isis network point-to-point
+!
+interface Ethernet4
+   description Leaf4_Et2
+   no switchport
+   ip address 10.22.32.70/31
+   isis enable Underlay
+   isis circuit-type level-1
+   isis network point-to-point
+!
+interface Ethernet5
+   description Border1_Et2
+   no switchport
+   ip address 10.22.32.72/31
+   isis enable Underlay
+   isis circuit-type level-1
+   isis network point-to-point
+!
+interface Ethernet6
+   description Border_Et2
+   no switchport
+   ip address 10.22.32.74/31
+   isis enable Underlay
+   isis circuit-type level-1
+   isis network point-to-point
+!
+interface Ethernet7
+!
+interface Ethernet8
+!
+interface Loopback1
+   ip address 10.22.36.2/32
+   isis enable Underlay
+   isis passive
+!
+interface Management1
+!
+ip routing
+no ip icmp redirect
+!
+router bgp 65500
+   router-id 10.22.36.2
+   no bgp default ipv4-unicast
+   maximum-paths 32 ecmp 32
+   bgp listen range 10.22.37.0/24 peer-group OVERLAY remote-as 65500
+   neighbor OVERLAY peer group
+   neighbor OVERLAY out-delay 0
+   neighbor OVERLAY update-source Loopback1
+   neighbor OVERLAY bfd
+   neighbor OVERLAY ebgp-multihop 4
+   neighbor OVERLAY route-reflector-client
+   neighbor OVERLAY send-community extended
+   !
+   address-family evpn
+      neighbor OVERLAY activate
+!
+router isis Underlay
+   net 49.0022.0001.0001.0002.00
+   is-type level-1
+   log-adjacency-changes
+   !
+   address-family ipv4 unicast
+!
+end

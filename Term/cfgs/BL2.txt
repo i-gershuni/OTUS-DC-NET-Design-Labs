@@ -1,0 +1,131 @@
+! Command: show running-config
+! device: BL2 (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname BL2
+!
+spanning-tree mode mstp
+spanning-tree root super
+!
+vlan 500
+   name DMZ
+!
+vrf instance INSIDE
+!
+vrf instance OUTSIDE
+!
+interface Ethernet1
+   description Spine1_Et6
+   no switchport
+   ip address 10.22.32.11/31
+   isis enable Underlay
+   isis circuit-type level-1
+   isis network point-to-point
+!
+interface Ethernet2
+   description Spine2_Et5
+   no switchport
+   ip address 10.22.32.75/31
+   isis enable Underlay
+   isis circuit-type level-1
+   isis network point-to-point
+!
+interface Ethernet3
+!
+interface Ethernet4
+!
+interface Ethernet5
+!
+interface Ethernet6
+   switchport access vlan 500
+!
+interface Ethernet7
+   no switchport
+   vrf INSIDE
+   ip address 10.50.1.4/31
+!
+interface Ethernet8
+   no switchport
+   vrf INSIDE
+   ip address 10.50.1.6/31
+!
+interface Loopback1
+   ip address 10.22.37.6/32
+   isis enable Underlay
+   isis passive
+!
+interface Management1
+!
+interface Vlan500
+   vrf OUTSIDE
+   ip address virtual 10.10.10.1/24
+!
+interface Vxlan1
+   vxlan source-interface Loopback1
+   vxlan udp-port 4789
+   vxlan vlan 500 vni 10500
+   vxlan vrf INSIDE vni 90000
+   vxlan vrf OUTSIDE vni 90001
+!
+ip virtual-router mac-address 02:00:00:00:1e:af
+!
+ip routing
+no ip icmp redirect
+ip routing vrf INSIDE
+ip routing vrf OUTSIDE
+!
+router bgp 65500
+   router-id 10.22.37.6
+   no bgp default ipv4-unicast
+   maximum-paths 32 ecmp 32
+   neighbor OVERLAY peer group
+   neighbor OVERLAY remote-as 65500
+   neighbor OVERLAY out-delay 0
+   neighbor OVERLAY update-source Loopback1
+   neighbor OVERLAY ebgp-multihop 4
+   neighbor OVERLAY send-community extended
+   neighbor 10.22.36.1 peer group OVERLAY
+   neighbor 10.22.36.2 peer group OVERLAY
+   !
+   vlan 500
+      rd auto
+      route-target both 65500:10500
+      redistribute learned
+   !
+   address-family evpn
+      neighbor OVERLAY activate
+   !
+   vrf INSIDE
+      rd 65500:1
+      route-target import evpn 6500:90000
+      route-target export evpn 6500:90000
+      neighbor 10.50.1.5 remote-as 65999
+      neighbor 10.50.1.7 remote-as 65999
+      aggregate-address 172.22.0.0/16 summary-only
+      redistribute connected
+      !
+      address-family ipv4
+         neighbor 10.50.1.5 activate
+         neighbor 10.50.1.7 activate
+   !
+   vrf OUTIDE
+      rd 65500:2
+      route-target import evpn 6500:90001
+      route-target export evpn 6500:90001
+      redistribute connected
+!
+router isis Underlay
+   net 49.0022.0001.0002.0006.00
+   is-type level-1
+   log-adjacency-changes
+   !
+   address-family ipv4 unicast
+!
+end

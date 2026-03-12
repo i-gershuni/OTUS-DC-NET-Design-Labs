@@ -1,0 +1,159 @@
+! Command: show running-config
+! device: L4 (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname L4
+!
+spanning-tree mode mstp
+spanning-tree root super
+spanning-tree guard loop default
+!
+vlan 100
+   name Users1
+!
+vlan 101
+   name Users2
+!
+vlan 200
+   name Servers
+!
+vlan 201
+   name Servers2
+!
+vrf instance INSIDE
+!
+interface Port-Channel2
+   description Users_SW2
+   switchport trunk allowed vlan 100-101
+   switchport mode trunk
+   !
+   evpn ethernet-segment
+      identifier 0000:0000:0000:0304:0002
+      route-target import 00:00:00:03:04:02
+   lacp system-id 1eaf.0304.0002
+!
+interface Ethernet1
+   description Spine1_Et4
+   no switchport
+   ip address 10.22.32.7/31
+   isis enable Underlay
+   isis circuit-type level-1
+   isis network point-to-point
+!
+interface Ethernet2
+   description Spine2_Et4
+   no switchport
+   ip address 10.22.32.71/31
+   isis enable Underlay
+   isis circuit-type level-1
+   isis network point-to-point
+!
+interface Ethernet3
+!
+interface Ethernet4
+!
+interface Ethernet5
+!
+interface Ethernet6
+   description SW2_et0/1
+   channel-group 2 mode active
+!
+interface Ethernet7
+!
+interface Ethernet8
+!
+interface Loopback1
+   ip address 10.22.37.4/32
+   isis enable Underlay
+   isis passive
+!
+interface Management1
+!
+interface Vlan100
+   vrf INSIDE
+   ip address virtual 172.22.100.1/24
+!
+interface Vlan101
+   vrf INSIDE
+   ip address virtual 172.22.101.1/24
+!
+interface Vlan200
+   vrf INSIDE
+   ip address virtual 172.22.200.1/24
+!
+interface Vlan201
+   vrf INSIDE
+   ip address virtual 172.22.201.1/24
+!
+interface Vxlan1
+   vxlan source-interface Loopback1
+   vxlan udp-port 4789
+   vxlan vlan 100 vni 10100
+   vxlan vlan 101 vni 10101
+   vxlan vlan 200 vni 10200
+   vxlan vlan 201 vni 10201
+   vxlan vrf INSIDE vni 90000
+!
+ip virtual-router mac-address 02:00:00:00:1e:af
+!
+ip routing
+no ip icmp redirect
+ip routing vrf INSIDE
+!
+router bgp 65500
+   router-id 10.22.37.4
+   no bgp default ipv4-unicast
+   maximum-paths 2 ecmp 2
+   neighbor OVERLAY peer group
+   neighbor OVERLAY remote-as 65500
+   neighbor OVERLAY out-delay 0
+   neighbor OVERLAY update-source Loopback1
+   neighbor OVERLAY ebgp-multihop 4
+   neighbor OVERLAY send-community extended
+   neighbor 10.22.36.1 peer group OVERLAY
+   neighbor 10.22.36.2 peer group OVERLAY
+   !
+   vlan 100
+      rd auto
+      route-target both 65500:10100
+      redistribute learned
+   !
+   vlan 101
+      rd auto
+      route-target both 65500:10101
+      redistribute learned
+   !
+   vlan 200
+      rd auto
+      route-target both 65500:10200
+      redistribute learned
+   !
+   vlan 201
+      rd auto
+      route-target both 65500:10201
+      redistribute learned
+   !
+   address-family evpn
+      neighbor OVERLAY activate
+   !
+   vrf INSIDE
+      rd 65500:1
+      route-target import evpn 6500:90000
+      route-target export evpn 6500:90000
+      redistribute connected
+!
+router isis Underlay
+   net 49.0022.0001.0002.0004.00
+   is-type level-1
+   log-adjacency-changes
+   !
+   address-family ipv4 unicast
+!
+end

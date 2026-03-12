@@ -1,0 +1,170 @@
+Building configuration...
+
+Current configuration : 3616 bytes
+!
+! Last configuration change at 23:41:58 UTC Wed Mar 11 2026
+!
+version 17.12
+service timestamps debug datetime msec
+service timestamps log datetime msec
+!
+hostname R1
+!
+boot-start-marker
+boot-end-marker
+!
+!
+no aaa new-model
+!
+!
+!
+!
+!
+!
+!
+!         
+!
+!
+!
+!
+!
+ip cef
+login on-success log
+no ipv6 cef
+!
+!
+!
+!
+!
+!
+!
+!
+multilink bundle-name authenticated
+!
+!
+crypto pki trustpoint TP-self-signed-67109008
+ enrollment selfsigned
+ subject-name cn=IOS-Self-Signed-Certificate-67109008
+ revocation-check none
+ rsakeypair TP-self-signed-67109008
+ hash sha256
+!
+!
+crypto pki certificate chain TP-self-signed-67109008
+ certificate self-signed 01
+  3082032C 30820214 A0030201 02020101 300D0609 2A864886 F70D0101 0B050030 
+  2F312D30 2B060355 04030C24 494F532D 53656C66 2D536967 6E65642D 43657274 
+  69666963 6174652D 36373130 39303038 301E170D 32363033 31313232 31323531 
+  5A170D33 36303331 30323231 3235315A 302F312D 302B0603 5504030C 24494F53 
+  2D53656C 662D5369 676E6564 2D436572 74696669 63617465 2D363731 30393030 
+  38308201 22300D06 092A8648 86F70D01 01010500 0382010F 00308201 0A028201 
+  01008B51 2289FBAD 1BF618AD D6AE2BE6 FA543B0D 11219186 30A3A24E C19620A4 
+  CB2503FE B584C92A 0A736B46 6C0A7E4B F58BAB8C D6186737 77BF9BFF 5A45DED6 
+  793AFBD2 B9275BFC 5FCCFC64 76261655 9D3F9FCF 713740D0 289F6E08 0F9F99EE 
+  7F3B4B3F 00E9E002 E43E25D2 AF0056BF EFEF52B2 8DDA5AC9 17BB8CBB E14F5969 
+  29652F42 A14298B2 A52D8C6C 2BC1F7DF D6F064D0 A74CDB14 EA84DF72 8B20C936 
+  6923E5DC 6D7EAF73 F3C32C09 535B0F51 F5BEBDCF 3FC7E669 AE73BAE6 384CD077 
+  05E15514 96A3D52F 50AFCC12 194F556C 3D8A616A 21EF7F92 07396628 29F02574 
+  9E4836E7 43F522F3 799630AA 3C13BE6D 7A6306EE AD4FBDBF 6645AD36 EE04C62C 
+  42650203 010001A3 53305130 1D060355 1D0E0416 04149B0A 12C32B48 5C0481EE 
+  6621F091 80D064B0 F3FA301F 0603551D 23041830 1680149B 0A12C32B 485C0481 
+  EE6621F0 9180D064 B0F3FA30 0F060355 1D130101 FF040530 030101FF 300D0609 
+  2A864886 F70D0101 0B050003 82010100 06CCD442 E6676B51 5045427A 1E918E1D 
+  459F8C4B 3D766504 12258CBE 7A4BB547 1D543C22 267703F9 54FDED13 995154CC 
+  E31E5311 4F60D293 ED599FF5 B4ED2F08 593E553B 826D31D7 4CA66994 E88CEBE9 
+  DAD70281 82C8D4B8 2C812A49 BCF9D4AE 5258ADC2 DB1A13F8 F100C15D 3B690C08 
+  50A9DA8F 7F04F92F 35009BC8 48ECAF48 9C051C56 26C4F356 FF5D25AF 00A00308 
+  A4744940 EE5EF39A 331ECD39 10832590 2A4D494E E4A0DD41 2289A68F A38FBA94 
+  478A6418 991A2D55 8202A7FE 42F22C87 78D99E6A 12AC6D0E 6E58B259 29BD9252 
+  4D7F0B6B DBC599D2 E98048BB 2085CEA8 29B72D8D CD770491 EC770431 9E7BFAFA 
+  C0023ED4 1DC2845A F1AA2457 3EE14960
+        quit
+!
+!
+memory free low-watermark processor 81225
+!
+!
+spanning-tree mode rapid-pvst
+!
+!
+!
+!
+!
+!
+!         
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ ip address 10.1.1.1 255.255.255.255
+!
+interface Ethernet0/0
+ ip address 10.50.1.1 255.255.255.254
+!
+interface Ethernet0/1
+ ip address 10.50.1.5 255.255.255.254
+!
+interface Ethernet0/2
+ no ip address
+ shutdown
+!
+interface Ethernet0/3
+ no ip address
+ shutdown
+!
+router bgp 65999
+ bgp router-id interface Loopback0
+ bgp log-neighbor-changes
+ neighbor 10.50.1.0 remote-as 65500
+ neighbor 10.50.1.4 remote-as 65500
+ !
+ address-family ipv4
+  redistribute connected
+  neighbor 10.50.1.0 activate
+  neighbor 10.50.1.0 default-originate
+  neighbor 10.50.1.0 as-override
+  neighbor 10.50.1.4 activate
+  neighbor 10.50.1.4 default-originate
+  neighbor 10.50.1.4 as-override
+  maximum-paths 32
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+ip http server
+ip http secure-server
+ip ssh bulk-mode 131072
+!
+!
+!
+!
+!
+control-plane
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input ssh
+!
+!
+!
+!
+end

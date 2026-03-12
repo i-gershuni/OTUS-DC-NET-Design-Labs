@@ -1,0 +1,167 @@
+!
+! Last configuration change at 23:36:50 UTC Wed Mar 11 2026
+!
+version 17.12
+service timestamps debug datetime msec
+service timestamps log datetime msec
+!
+hostname R2
+!
+boot-start-marker
+boot-end-marker
+!
+!
+no aaa new-model
+!
+!
+!
+!
+!
+!
+!
+!         
+!
+!
+!
+!
+!
+ip cef
+login on-success log
+no ipv6 cef
+!
+!
+!
+!
+!
+!
+!
+!
+multilink bundle-name authenticated
+!
+!
+crypto pki trustpoint TP-self-signed-67109024
+ enrollment selfsigned
+ subject-name cn=IOS-Self-Signed-Certificate-67109024
+ revocation-check none
+ rsakeypair TP-self-signed-67109024
+ hash sha256
+!
+!
+crypto pki certificate chain TP-self-signed-67109024
+ certificate self-signed 01
+  3082032C 30820214 A0030201 02020101 300D0609 2A864886 F70D0101 0B050030 
+  2F312D30 2B060355 04030C24 494F532D 53656C66 2D536967 6E65642D 43657274 
+  69666963 6174652D 36373130 39303234 301E170D 32363033 31313233 31313039 
+  5A170D33 36303331 30323331 3130395A 302F312D 302B0603 5504030C 24494F53 
+  2D53656C 662D5369 676E6564 2D436572 74696669 63617465 2D363731 30393032 
+  34308201 22300D06 092A8648 86F70D01 01010500 0382010F 00308201 0A028201 
+  0100B316 47D59830 EB693D95 55D6B8A8 4A2F21B3 9DF6EEE0 4D945DE0 FB4196FF 
+  1CF69C04 48A3E905 7F25CC5A 75E8F4B5 C253D4D1 B8F275FB 9EDF71E2 0DDA86CB 
+  1B371891 237CE63B C7F91B23 50449361 120D0837 45B18ABD 6F97C4EA EEDAD26B 
+  CDC36A78 C7306024 6E4901E7 6F32B092 F779A474 0F4965FE 198B4127 DB8AFB01 
+  2AD0DA9F 01F6923A 0DE2D170 4DB53966 4423F89C 1A35B9F5 CF0460DF 54D21AAD 
+  95B2A793 64472797 A8BC9AC9 3926F6D7 9B893C8A BDB350C5 4202C3B2 C070B28C 
+  7C0E4AEE EDA381B0 98E65976 39868DD6 8CAC66FF 0B8AC691 8AF369DB E1695B31 
+  32374F99 9F41B80A 269E1651 2CA58FAD 20D9F57E 07A1371C 9B95AD32 87CD7D7F 
+  4E450203 010001A3 53305130 1D060355 1D0E0416 041495A8 98FAA1F0 AD0EC1CD 
+  B72A7199 611BB295 70F0301F 0603551D 23041830 16801495 A898FAA1 F0AD0EC1 
+  CDB72A71 99611BB2 9570F030 0F060355 1D130101 FF040530 030101FF 300D0609 
+  2A864886 F70D0101 0B050003 82010100 69F5B1ED 60131C6D E1AB6318 BEBD398D 
+  456E6BE3 2489F005 21B43E13 7082609D 03A7B8D2 088E8581 4E8E60B9 BC9FD858 
+  8E998479 D675AD32 2017488C E926A50C B56277E2 78CA6715 8929C4F1 4CA54A8D 
+  349FF258 6117D999 2D2D647F 790E82A0 CFCD3E49 B763F867 E4EA706C A0083334 
+  B790CD80 EBCD5CE5 D83082AE A0A29CD1 D8B99B40 1EA11923 16C59724 C1E0AF3C 
+  D35DFB6E 6B0DB102 6ABCB1AF 5BDA871D B15EA995 3A9B1672 CCEA45EF E6471203 
+  021D37AB 9C93970E DDA81AC0 D62B001F FB279392 F65B60E4 3F1FA7C4 BA841F83 
+  C3792B18 DA37B936 7D22FB11 B20BE3BB 30514AF4 8B3D6E57 25F668BB 758E15C6 
+  07D10163 756AB4CF ACCA60E5 FCA96714
+        quit
+!
+!
+memory free low-watermark processor 81225
+!
+!
+spanning-tree mode rapid-pvst
+!
+!
+!
+!
+!
+!
+!         
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ ip address 10.2.2.2 255.255.255.255
+!
+interface Ethernet0/0
+ ip address 10.50.1.3 255.255.255.254
+!
+interface Ethernet0/1
+ ip address 10.50.1.7 255.255.255.254
+!
+interface Ethernet0/2
+ no ip address
+ shutdown
+!
+interface Ethernet0/3
+ no ip address
+ shutdown
+!
+router bgp 65999
+ bgp router-id interface Loopback0
+ bgp log-neighbor-changes
+ neighbor 10.50.1.2 remote-as 65500
+ neighbor 10.50.1.6 remote-as 65500
+ !
+ address-family ipv4
+  redistribute connected
+  neighbor 10.50.1.2 activate
+  neighbor 10.50.1.2 default-originate
+  neighbor 10.50.1.2 as-override
+  neighbor 10.50.1.6 activate
+  neighbor 10.50.1.6 default-originate
+  neighbor 10.50.1.6 as-override
+  maximum-paths 32
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+ip http server
+ip http secure-server
+ip ssh bulk-mode 131072
+!
+!
+!
+!
+!
+control-plane
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input ssh
+!
+!
+!
+!
+end
